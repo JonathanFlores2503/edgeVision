@@ -1,0 +1,37 @@
+# Datos y artefactos de runtime
+data/
+**/data/
+edge/_verify/
+*.db
+*.db-journal
+*.mp4
+
+# Config con secretos (usar config.example.yaml como plantilla)
+config.yaml
+edge/config.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# OTA / pesos descargados
+**/ota/
+
+# Contador de flujo: data por-despliegue (corredor, contadores, evidencia)
+edge/Models/ContadorFlujo/zones_web/*.json
+edge/Models/ContadorFlujo/counters/
+edge/Models/ContadorFlujo/EVENTOS_CONTADOR/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Pesos de modelos (binarios grandes; no versionar)
+*.pt
+*.onnx
+*.engine

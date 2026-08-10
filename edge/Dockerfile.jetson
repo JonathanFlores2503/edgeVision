@@ -1,0 +1,24 @@
+# Imagen edge para Jetson (JetPack / L4T). torch+torchvision vienen en la base.
+# Ajusta el tag a tu versión de JetPack.
+FROM nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.0-py3
+
+ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /app
+
+# Dependencias de sistema para OpenCV / GStreamer (decodificación RTSP por HW).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-opencv \
+        gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dependencias Python (torch/torchvision ya están en la base).
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir \
+        pytorchvideo numpy "opencv-python>=4.8" PyYAML "pydantic>=2.5" "paho-mqtt>=2.0" requests
+
+COPY . /app
+
+# Config y datos se montan como volúmenes en runtime:
+#   docker run --runtime nvidia --network host \
+#     -v $PWD/config.yaml:/app/config.yaml -v $PWD/data:/app/data edge-vad
+CMD ["python3", "-m", "edge.main", "--config", "config.yaml"]

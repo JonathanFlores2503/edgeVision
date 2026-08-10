@@ -1,0 +1,118 @@
+# ── Configuración del nodo Edge (Jetson) ──────────────────────────────────────
+# Copia este archivo a config.yaml y ajústalo por dispositivo.
+
+device:
+  id: "jetson-001"            # identificador único del nodo
+  site: "ruta-7-bus-12"       # ubicación/contexto (para el dashboard)
+
+# ── Cámaras (hasta 4) ─────────────────────────────────────────────────────────
+# Hikvision: rtsp://user:pass@IP:554/Streaming/Channels/101  (101 = canal 1, stream principal)
+# transport: tcp (por defecto) evita errores RST típicos de UDP/NAT. Usa "udp" solo si tu red lo exige.
+cameras:
+  - id: "cam-front"
+    url: "rtsp://user:pass@192.168.1.10:554/stream1"
+    transport: "tcp"
+    enabled: true
+  - id: "cam-rear"
+    url: "rtsp://user:pass@192.168.1.11:554/stream1"
+    enabled: true
+  - id: "cam-left"
+    url: "rtsp://user:pass@192.168.1.12:554/stream1"
+    enabled: false
+  - id: "cam-right"
+    url: "rtsp://user:pass@192.168.1.13:554/stream1"
+    enabled: false
+
+# ── Captura ───────────────────────────────────────────────────────────────────
+# Las RTSP de arriba SIEMPRE se usan. Además, con usb_autodetect el nodo detecta
+# cámaras USB en caliente: las conectas y aparecen solas en la interfaz (id usb-videoN).
+capture:
+  usb_autodetect: true        # plug-and-play de cámaras USB
+  usb_scan_interval_s: 3.0    # cada cuánto re-escanea /dev/video*
+  usb_max_devices: 4          # tope de cámaras USB simultáneas
+
+# ── Modelo integrado de detección en vídeo (corre 100% on-device) ─────────────
+# (Los modelos enchufables viven en heuristicModels/ — ver docs/PLUGINS.md.)
+model:
+  name: "x3d_l"                       # x3d_l | x3d_m | x3d_s
+  device: "cuda"                      # cuda | cpu
+  # Carpeta con los pesos del modelo integrado. El extractor X3D se baja de torch.hub.
+  weights_dir: "./weights"
+  weights_detector: "13_0.7962_x3d_l_maxScore_MIL_BERT_MB.pkl"
+  weights_classifier: "09_0.3372_x3d_l_0.1_winSliding_MIL_MODI_M.pkl"
+  n_features: 192
+  n_classes: 9                        # 9 o 13 clases
+  # Etiquetas legibles de clase (índice = class_id). Ajusta a tu dataset.
+  class_names:
+    - "Normal"
+    - "Abuse"
+    - "Assault"
+    - "Fighting"
+    - "Robbery"
+    - "Stealing"
+    - "Vandalism"
+    - "Harassment"
+    - "Other"
+  use_tensorrt: false                 # optimización opcional; fallback PyTorch
+
+# ── Motor de eventos ──────────────────────────────────────────────────────────
+events:
+  score_threshold: 0.55              # umbral de score de detección [0,1]
+  open_consecutive: 2                # (legacy) ya no gobierna la apertura; ver confirm_seconds
+  close_consecutive: 3               # nº de clips seguidos bajo umbral para CERRAR evento
+  pre_roll_s: 3.0                    # segundos antes del disparo a incluir en el clip
+  post_roll_s: 3.0                   # segundos después del cierre a incluir en el clip
+  min_event_gap_s: 5.0               # tiempo mínimo entre eventos de la misma cámara
+  # ── Filtro temporal de falsos positivos (confirma detección real) ──
+  confirm_seconds: 5.0               # PERSISTENCIA: tiempo continuo sobre umbral para confirmar
+  burst_window_s: 10.0               # RÁFAGA: ventana de observación
+  burst_count: 4                     # RÁFAGA: nº de clips altos en la ventana para confirmar
+
+# ── Almacenamiento local ──────────────────────────────────────────────────────
+storage:
+  db_path: "./data/edge.db"          # SQLite (eventos, outbox, estado)
+  clips_dir: "./data/clips"          # clips de detección recortados (.mp4)
+  ring_buffer_s: 12.0                # segundos de vídeo retenidos en RAM por cámara
+  max_disk_mb: 4096                  # límite de uso de disco para clips (rotación)
+
+# ── Comunicación con el Cloud ─────────────────────────────────────────────────
+cloud:
+  enabled: true
+  # MQTT: telemetría (scores/heartbeat) y eventos
+  mqtt:
+    host: "cloud.example.io"
+    port: 8883
+    tls: true
+    username: "jetson-001"
+    password: "CHANGE_ME"            # o usa client cert (ver tls_*)
+    tls_ca: ""                       # ruta CA (opcional)
+    base_topic: "vad"               # topics: vad/<device>/telemetry|events|health
+    telemetry_every_n_clips: 1       # throttling de telemetría
+  # HTTPS: subida de clips de detección (presigned URL pedida al backend)
+  http:
+    base_url: "https://cloud.example.io/api"
+    device_token: "CHANGE_ME"        # bearer token del dispositivo
+    verify_tls: true
+    upload_timeout_s: 60
+    retry_max: 5
+  # OTA: descarga de pesos/config nuevos
+  ota:
+    enabled: true
+    poll_interval_s: 300
+
+# ── Interfaz local (app web servida por la Jetson, accesible por WiFi/LAN) ────
+# Sin internet: el teléfono/PC se conecta a http://<IP-de-la-Jetson>:8080
+monitor:
+  enabled: true
+  host: "0.0.0.0"                    # 0.0.0.0 = visible en toda la red local
+  port: 8080
+
+# ── GPS (NEO-6M por UART de la Jetson o vía Arduino) ──────────────────────────
+gps:
+  enabled: false                     # ponlo true cuando conectes el NEO-6M
+  port: "/dev/ttyTHS1"               # UART Jetson; en Windows sería COMx; Arduino: /dev/ttyUSB0
+  baudrate: 9600
+  simulate: false                    # true = mueve un punto simulado (para probar el mapa)
+
+logging:
+  level: "INFO"                      # DEBUG | INFO | WARNING | ERROR

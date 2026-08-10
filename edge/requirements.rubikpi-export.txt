@@ -1,0 +1,21 @@
+# Edge — RUBIK Pi 3 — dependencias SOLO para exportar los .onnx (one-time).
+#
+# Necesario únicamente para correr tools/export_onnx.py, que convierte los pesos
+# .pkl de TransLowNet (X3D + cabezas) a ONNX. Puedes hacerlo en un PC de dev o en
+# la propia placa en modo CPU. Tras exportar, el runtime NO necesita torch.
+#
+# torch/torchvision dependen de la plataforma (ver requirements-model.txt). En
+# aarch64 sin CUDA, instala el wheel de CPU:
+#     pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# y luego:
+#     pip install -r requirements.rubikpi-export.txt
+#
+# (torch/torchvision se dejan como referencia; instálalos con el comando de arriba
+#  para no pisar la build correcta de la plataforma.)
+
+# torch>=2.0
+# torchvision>=0.15
+
+pytorchvideo>=0.1.5      # extractor X3D vía torch.hub
+fvcore>=0.1.5            # requerido por pytorchvideo
+onnx>=1.15               # exportador / validación del grafo
