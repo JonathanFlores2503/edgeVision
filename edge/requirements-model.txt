@@ -1,0 +1,26 @@
+# Edge (Jetson) — dependencias del MODELO REAL TransLowNet.
+#
+# Solo necesario si ejecutas SIN --mock (inferencia real: X3D -> Detector_VAD
+# -> clasificador). Instala primero requirements.txt.
+#
+# IMPORTANTE — torch/torchvision dependen de la PLATAFORMA, NO los instales
+# ciegamente con pip:
+#   * Jetson (aarch64 + CUDA): vienen en la imagen NVIDIA L4T
+#       (ver Dockerfile.jetson, base l4t-pytorch). NO los reinstales con pip.
+#   * PC de desarrollo (CPU/GPU): instálalos con el comando que indica
+#       https://pytorch.org/get-started/locally/  para tu CUDA/CPU, p. ej.:
+#         pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#   * Este equipo aarch64 (sin CUDA): busca un wheel de torch para tu Python,
+#       o usa --mock si solo quieres la demo.
+#
+# Tras tener torch/torchvision en el entorno, instala el resto:
+#     pip install -r requirements-model.txt
+#
+# (torch y torchvision se listan como referencia; déjalos comentados si ya los
+#  provee la plataforma para no pisar la build correcta.)
+
+# torch>=2.0
+# torchvision>=0.15
+
+pytorchvideo>=0.1.5      # extractor X3D vía torch.hub (facebookresearch/pytorchvideo)
+fvcore>=0.1.5            # requerido por pytorchvideo

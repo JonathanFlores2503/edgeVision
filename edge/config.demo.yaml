@@ -1,0 +1,88 @@
+device:
+  id: jetson-001
+  site: ruta-7-bus-12
+cameras:
+- id: cam-front
+  url: rtsp://admin:celestialA33@192.168.168.10:554/Streaming/Channels/101
+  transport: tcp
+  enabled: false
+- id: cam-rear
+  url: rtsp://user:pass@192.168.1.11:554/stream1
+  enabled: false
+- id: cam-left
+  url: rtsp://user:pass@192.168.1.12:554/stream1
+  enabled: false
+- id: cam-right
+  url: rtsp://user:pass@192.168.1.13:554/stream1
+  enabled: false
+capture:
+  usb_autodetect: true
+  usb_scan_interval_s: 3.0
+  usb_max_devices: 4
+model:
+  name: x3d_l
+  device: cpu
+  backend: onnx
+  onnx_dir: ./data/onnx
+  weights_dir: ./data/weights
+  weights_detector: 13_0.7962_x3d_l_maxScore_MIL_BERT_MB.pkl
+  weights_classifier: 09_0.3372_x3d_l_0.1_winSliding_MIL_MODI_M.pkl
+  n_features: 192
+  n_classes: 9
+  class_names:
+  - Abuse
+  - Assault
+  - Fighting
+  - Robbery
+  - Shooting
+  - Burglary
+  - Shoplifting
+  - Stealing
+  - Vandalism
+  use_tensorrt: false
+events:
+  score_threshold: 0.04
+  open_consecutive: 2
+  close_consecutive: 3
+  pre_roll_s: 3.0
+  post_roll_s: 3.0
+  min_event_gap_s: 5.0
+  confirm_seconds: 5.0
+  burst_window_s: 10.0
+  burst_count: 4
+storage:
+  db_path: ./data/edge.db
+  clips_dir: ./data/clips
+  ring_buffer_s: 12.0
+  max_disk_mb: 4096
+cloud:
+  enabled: false
+  mqtt:
+    host: cloud.example.io
+    port: 8883
+    tls: true
+    username: jetson-001
+    password: CHANGE_ME
+    tls_ca: ''
+    base_topic: vad
+    telemetry_every_n_clips: 1
+  http:
+    base_url: https://cloud.example.io/api
+    device_token: CHANGE_ME
+    verify_tls: true
+    upload_timeout_s: 60
+    retry_max: 5
+  ota:
+    enabled: true
+    poll_interval_s: 300
+monitor:
+  enabled: true
+  host: 0.0.0.0
+  port: 8080
+gps:
+  enabled: false
+  port: /dev/ttyTHS1
+  baudrate: 9600
+  simulate: false
+logging:
+  level: INFO

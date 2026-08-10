@@ -1,0 +1,26 @@
+# Edge — RUBIK Pi 3 (Qualcomm QCS6490) — dependencias de RUNTIME.
+#
+# Variante para correr el nodo con backend ONNX (model.backend: onnx) DIRECTO en
+# el host (conda/venv), SIN torch. La inferencia va por onnxruntime: NPU Hexagon
+# (QNN EP) si el SDK de Qualcomm está instalado, o CPU (Cortex-A78) como fallback.
+#
+# Instalación en la placa:
+#     pip install -r requirements.rubikpi.txt
+#
+# NO incluye torch a propósito: torch solo hace falta UNA vez para exportar los
+# .onnx (ver requirements.rubikpi-export.txt + tools/export_onnx.py).
+
+# --- base del nodo (igual que requirements.txt) ---
+numpy>=1.23
+opencv-python-headless>=4.8
+PyYAML>=6.0
+pydantic>=2.5
+paho-mqtt>=2.0
+requests>=2.31
+
+# --- runtime de inferencia ---
+# onnxruntime de PyPI trae CPUExecutionProvider (funciona hoy en aarch64).
+# Para la NPU Hexagon (QNNExecutionProvider) necesitas un onnxruntime compilado
+# con --use_qnn contra el QNN SDK de Qualcomm; NO se instala por pip en Linux
+# aarch64. Ver README.rubikpi.md.
+onnxruntime>=1.17
