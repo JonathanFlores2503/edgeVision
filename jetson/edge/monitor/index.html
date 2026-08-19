@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#070b14" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<title>{{BRAND}} · Centro de Monitoreo</title>
+<style>
+  :root{
+    --bg:#070b14; --bg2:#0b1020; --panel:#0e1424; --panel2:#121a2e;
+    --line:#1e293f; --line2:#27324f;
+    --txt:#eaf0ff; --muted:#8696b5; --dim:#5c6a86;
+    --cyan:#22d3ee; --blue:#3b82f6; --indigo:#6366f1;
+    --ok:#34d399; --bad:#f43f5e; --warn:#f59e0b;
+    --grad:linear-gradient(135deg,#22d3ee,#6366f1);
+    --glow:0 0 0 1px #1e293f, 0 10px 30px -12px #000a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;color:var(--txt);font-family:system-ui,"Segoe UI",Roboto,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #16204022 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, #22d3ee14 0%, transparent 55%),
+      var(--bg);
+  }
+  a{color:inherit;text-decoration:none;}
+  .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh;}
+
+  /* ───────── Sidebar ───────── */
+  .side{position:sticky;top:0;height:100vh;background:linear-gradient(180deg,#0b1224,#070b14);
+        border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 14px;}
+  .brand{display:flex;align-items:center;gap:12px;padding:8px 8px 18px;border-bottom:1px solid var(--line);}
+  .logo{width:42px;height:42px;flex:0 0 auto;}
+  .brand .name{font-size:18px;font-weight:800;letter-spacing:.3px;}
+  .brand .name b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .brand .tag{font-size:10.5px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;}
+  nav{display:flex;flex-direction:column;gap:4px;margin-top:14px;}
+  .nav{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;color:var(--muted);
+       font-size:14px;font-weight:600;cursor:pointer;transition:.15s;}
+  .nav svg{width:19px;height:19px;opacity:.9;}
+  .nav:hover{background:#121a2e;color:var(--txt);}
+  .nav.active{color:#fff;background:linear-gradient(135deg,#22d3ee1f,#6366f11f);
+              box-shadow:inset 0 0 0 1px #22d3ee33;}
+  .nav.active svg{color:var(--cyan);}
+  .side .foot{margin-top:auto;padding:12px 10px 4px;border-top:1px solid var(--line);
+              font-size:11px;color:var(--dim);line-height:1.6;}
+  .side .foot b{color:var(--muted);}
+
+  /* ───────── Topbar ───────── */
+  .main{display:flex;flex-direction:column;min-width:0;}
+  .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;
+       padding:16px 26px;background:#070b14cc;backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+  .top h1{font-size:17px;font-weight:700;margin:0;}
+  .top h1 small{display:block;font-size:11.5px;color:var(--muted);font-weight:500;margin-top:2px;}
+  .top .sp{margin-left:auto;}
+  .pills{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:30px;
+        background:#0e1424;border:1px solid var(--line);font-size:12px;color:var(--muted);}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 0 #f43f5e66;}
+  .dot.on{background:var(--ok);animation:pulse 2s infinite;}
+  .dot.net{background:var(--warn);} .dot.net.on{background:var(--cyan);}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 #34d39966;}70%{box-shadow:0 0 0 7px #34d39900;}100%{box-shadow:0 0 0 0 #34d39900;}}
+
+  main{padding:22px 26px 40px;max-width:1440px;width:100%;}
+
+  /* ───────── KPIs ───────── */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px;}
+  .kpi{position:relative;background:linear-gradient(160deg,var(--panel),#0a0f1d);border:1px solid var(--line);
+       border-radius:16px;padding:16px 18px;overflow:hidden;box-shadow:var(--glow);}
+  .kpi .ic{position:absolute;right:14px;top:14px;width:38px;height:38px;border-radius:11px;
+           display:grid;place-items:center;background:#22d3ee14;color:var(--cyan);}
+  .kpi .ic svg{width:20px;height:20px;}
+  .kpi .v{font-size:30px;font-weight:800;line-height:1;letter-spacing:-.5px;}
+  .kpi .l{color:var(--muted);font-size:12.5px;margin-top:7px;}
+  .kpi.alert{border-color:#f43f5e55;background:linear-gradient(160deg,#1b0e16,#0a0f1d);}
+  .kpi.alert .v{color:var(--bad);} .kpi.alert .ic{background:#f43f5e1c;color:var(--bad);}
+
+  /* ───────── Layout paneles ───────── */
+  .grid{display:grid;grid-template-columns:1.7fr 1fr;gap:16px;}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+  .col{display:flex;flex-direction:column;gap:16px;min-width:0;}
+  .panel{background:linear-gradient(160deg,var(--panel),#0a0f1d);border:1px solid var(--line);
+         border-radius:16px;overflow:hidden;box-shadow:var(--glow);}
+  .ph{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);}
+  .ph h2{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0;}
+  .ph .badge{margin-left:auto;font-size:11px;color:var(--dim);padding:3px 10px;border-radius:20px;
+             background:#0b1020;border:1px solid var(--line);}
+
+  /* ───────── Cámaras ───────── */
+  #cams{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;padding:14px;}
+  .cam{position:relative;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line);}
+  .cam img{width:100%;display:block;aspect-ratio:16/10;object-fit:cover;background:#05070d;}
+  .cam .ov{position:absolute;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:center;
+           padding:8px 10px;background:linear-gradient(#000b,transparent);font-size:12px;font-weight:600;}
+  .cam .nm{display:flex;align-items:center;gap:7px;}
+  .cam .nm::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);}
+  .cam .badge{background:#000a;border:1px solid #ffffff22;padding:3px 9px;border-radius:20px;backdrop-filter:blur(4px);}
+  .cam.anom{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad),0 0 26px -4px #f43f5e99;}
+  .cam.anom .badge{background:var(--bad);border-color:transparent;}
+  /* Telemetría de la cámara: DEBAJO del vídeo, nunca encima.
+     Sobre el frame solo van las cajas del modelo (rostro con nombre, persona sin
+     nombre); fecha, FPS, latencia, CPU/RAM y los parámetros del detector viven en
+     este grid, que se lee sin tapar la imagen. */
+  .cam .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:1px;
+    background:var(--line);border-top:1px solid var(--line);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .cam .meta .m{background:#0a0f1d;padding:4px 6px;display:flex;flex-direction:column;gap:1px;
+    min-width:0;}
+  .cam .meta .m i{font-style:normal;font-size:8px;text-transform:uppercase;letter-spacing:.4px;
+    color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cam .meta .m b{font-size:12px;font-weight:700;color:#eaf2ff;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;}
+  .cam .meta .m.wide{grid-column:span 2;}
+  .cam .meta .m b.hot{color:#fbbf24;}
+  .cam .meta .m b.ok{color:#4ade80;}
+  .cam .meta .m b.bad{color:#fb7185;}
+  /* Rostros vistos ahora mismo: una fila por cara, con su confianza de identidad. */
+  .cam .faces{display:flex;flex-direction:column;gap:1px;background:var(--line);}
+  .cam .faces[hidden]{display:none;}
+  .cam .faces .f{background:#0a0f1d;padding:4px 8px;display:flex;align-items:center;gap:8px;
+    font-size:11px;}
+  .cam .faces .f .who{font-weight:700;color:#eaf2ff;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;}
+  .cam .faces .f .dm{color:var(--dim);font-size:10px;}
+  .cam .faces .f .cf{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:10.5px;padding:1px 6px;border-radius:20px;}
+  .cam .faces .f.kn .cf{color:#4ade80;background:#4ade8018;}
+  .cam .faces .f.un .cf{color:#fb7185;background:#fb718518;}
+  .cam .faces .f.pd .cf{color:#38bdf8;background:#38bdf818;}
+  .cam .thrctl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:7px;
+    padding:7px 10px;background:linear-gradient(0deg,#000c,transparent);font-size:11px;color:var(--dim);}
+  .cam .thrctl input{width:64px;background:#000a;border:1px solid #ffffff2a;color:#fff;border-radius:7px;
+    padding:2px 7px;font:inherit;}
+  .cam .thrctl .thrhint{margin-left:auto;font-size:10px;opacity:.85;}
+  .cam .thrctl .rotctl{display:flex;align-items:center;gap:5px;}
+  .cam .thrctl select{background:#000a;border:1px solid #ffffff2a;color:#fff;border-radius:7px;
+    font-size:11px;padding:2px 4px;}
+  body:not(.is-admin) .cam .thrctl{display:none;}
+  .cam .meta .m b.mdl{color:#c4b5fd;font-size:10.5px;}   /* modelo activo del nodo */
+  /* Marcador de conteo entradas/salidas/dentro (Contador de flujo) */
+  /* La imagen y sus overlays viven en .frame; el marcador de conteo va DEBAJO. */
+  .cam .frame{position:relative;}
+  .cam .counts{display:flex;justify-content:center;gap:6px;padding:6px 5px;
+    background:#0a0f1d;border-top:1px solid var(--line);}
+  .cam .counts[hidden]{display:none;}
+  .cam .counts span{display:flex;flex-direction:column;align-items:center;min-width:42px;
+    padding:1px 5px;border-radius:6px;line-height:1;}
+  .cam .counts b{font-size:15px;font-weight:800;}
+  .cam .counts i{font-size:8px;text-transform:uppercase;letter-spacing:.3px;opacity:.8;font-style:normal;margin-top:1px;}
+  .cam .counts .ci{color:#4ade80;background:#4ade8018;}   /* entraron */
+  .cam .counts .co{color:#fb7185;background:#fb718518;}   /* salieron */
+  .cam .counts .cd{color:#38bdf8;background:#38bdf818;}   /* dentro */
+  /* Admin: el marcador «dentro» es clickeable para fijar/reiniciar el conteo. */
+  body.is-admin .cam .counts .cd{cursor:pointer;outline:1px solid #38bdf855;}
+  body.is-admin .cam .counts .cd:hover{background:#38bdf833;}
+  /* Botón «✎ Zonas»: solo admin y solo si el modelo activo edita corredor. */
+  .cam .zonebtn{display:none;background:#22d3ee1f;border:1px solid #22d3ee;color:#a5f3fc;
+    border-radius:7px;font:inherit;font-size:11px;font-weight:600;padding:3px 10px;cursor:pointer;
+    box-shadow:0 0 10px -2px #22d3ee66;}
+  .cam .zonebtn:hover{background:#22d3ee33;color:#fff;}
+  body.is-admin.has-zones .cam .zonebtn{display:inline-block;}
+  /* Editor de zonas (reusa .auth como overlay) */
+  #zonemodal .card{max-width:min(94vw,900px);}
+  #zonemodal .zwrap{position:relative;display:inline-block;max-width:100%;background:#05070d;
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;line-height:0;}
+  #zonemodal canvas{max-width:100%;display:block;cursor:crosshair;touch-action:none;}
+  #zonemodal .zctl{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;margin:12px 0 4px;
+    font-size:12.5px;color:var(--dim);}
+  #zonemodal .zctl label{display:flex;align-items:center;gap:6px;}
+  #zonemodal .zctl input[type=range]{vertical-align:middle;}
+  #zonemodal .zrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:10px;}
+  #zonemodal .zrow .btn{width:auto;margin-top:0;padding:9px 16px;font-size:13px;}
+  #zonemodal .zhelp{font-size:11.5px;opacity:.8;margin:2px 0 8px;}
+  #zonemodal .zmsg{min-height:15px;font-size:12px;margin-top:6px;}
+  #zonemodal .zmsg.err{color:var(--bad);} #zonemodal .zmsg.ok{color:var(--ok);}
+  .cam.anom .nm::before{background:var(--bad);box-shadow:0 0 8px var(--bad);}
+  .empty{color:var(--dim);font-size:13px;padding:26px;text-align:center;}
+
+  /* ───────── Mapa ───────── */
+  #map{width:100%;height:230px;display:block;background:
+       linear-gradient(0deg,#0a0f1d,#0b1224);}
+  .gpsline{display:flex;gap:14px;flex-wrap:wrap;padding:11px 16px;color:var(--muted);font-size:12px;
+           border-top:1px solid var(--line);font-variant-numeric:tabular-nums;}
+  .gpsline b{color:var(--txt);font-weight:700;}
+
+  /* ───────── Eventos ───────── */
+  #events{max-height:380px;overflow:auto;padding:8px 14px 14px;}
+  .ev{display:flex;gap:11px;padding:11px;margin-top:9px;border-radius:12px;background:#0b1020;
+      border:1px solid var(--line);}
+  .ev .bar{width:4px;border-radius:4px;background:var(--bad);flex:0 0 auto;}
+  .ev.closed .bar{background:var(--dim);}
+  .ev .t{font-size:13px;font-weight:700;}
+  .ev .m{color:var(--muted);font-size:11.5px;margin-top:3px;font-variant-numeric:tabular-nums;}
+  .ev .tag{margin-left:auto;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+           color:var(--bad);align-self:flex-start;}
+  .ev.closed .tag{color:var(--dim);}
+
+  /* ───────── Páginas ───────── */
+  .page[hidden]{display:none;}
+
+  /* ───────── Configuración ───────── */
+  .cfgwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;}
+  .cfgwrap .panel.wide{grid-column:1/-1;}
+  .pbody{padding:16px;display:flex;flex-direction:column;gap:14px;}
+  .ph .step{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;
+            font-weight:800;background:var(--grad);color:#04121f;flex:0 0 auto;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field>label{font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:.3px;}
+  .field .hint{font-size:11px;color:var(--dim);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:520px){.row2{grid-template-columns:1fr;}}
+  input[type=text],input[type=tel],input[type=email],input[type=number],input[type=url],select{
+    width:100%;background:#0b1020;border:1px solid var(--line2);border-radius:10px;color:var(--txt);
+    padding:10px 12px;font-size:13.5px;font-family:inherit;outline:none;transition:.15s;}
+  input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #22d3ee22;}
+  input::placeholder{color:#46546f;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;border:0;
+       padding:10px 16px;border-radius:11px;font-size:13.5px;font-weight:700;font-family:inherit;
+       background:#121a2e;color:var(--txt);border:1px solid var(--line2);transition:.15s;}
+  .btn:hover{border-color:var(--cyan);color:#fff;}
+  .btn.primary{background:var(--grad);color:#04121f;border:0;}
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn.sm{padding:8px 12px;font-size:12.5px;}
+  .btn.icon{padding:9px;width:38px;}
+  .addrow{display:flex;gap:8px;}
+  .addrow input{flex:1;}
+  /* lista de "chips" (teléfonos, correos, etc.) */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  /* ── Testigos (galería de evidencia del contador) ─────────────────────── */
+  .tg-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+  .tg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+  /* Galería de rostros: una tarjeta por persona con sus fotos */
+  .gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;}
+  .gal-card{background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:10px;}
+  .gal-card .gh{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .gal-card .gh b{font-size:13px;}
+  .gal-card .gh .n{color:var(--dim);font-size:11px;}
+  .gal-card .gh .del{margin-left:auto;}
+  .gal-shots{display:flex;flex-wrap:wrap;gap:6px;}
+  .gal-shot{position:relative;width:58px;height:58px;border-radius:8px;overflow:hidden;
+    border:1px solid var(--line2);background:#05070d;}
+  .gal-shot img{width:100%;height:100%;object-fit:cover;display:block;}
+  .gal-shot button{position:absolute;top:1px;right:1px;width:16px;height:16px;line-height:14px;
+    padding:0;border:none;border-radius:5px;background:#000b;color:#fb7185;font-size:11px;
+    cursor:pointer;}
+  .gal-shot button:hover{background:var(--bad);color:#fff;}
+  .galwarn{border:1px solid #fbbf2455;background:#fbbf2410;color:#fde68a;border-radius:9px;
+    padding:8px 10px;font-size:12px;margin-bottom:4px;}
+  .galwarn[hidden]{display:none;}
+  .tg-card{background:var(--panel2);border:1px solid var(--line2);border-radius:10px;
+           overflow:hidden;display:flex;flex-direction:column;}
+  .tg-card a.tg-shot{display:block;background:#060a12;aspect-ratio:3/4;overflow:hidden;}
+  .tg-card img{width:100%;height:100%;object-fit:cover;display:block;}
+  .tg-card .tg-none{width:100%;height:100%;display:grid;place-items:center;
+                    color:var(--dim);font-size:11px;}
+  .tg-meta{padding:8px 10px;display:flex;flex-direction:column;gap:3px;}
+  .tg-ev{font-size:11px;font-weight:700;letter-spacing:.06em;}
+  .tg-ev.in{color:var(--ok);} .tg-ev.out{color:var(--warn);}
+  .tg-when{font-size:12px;color:var(--txt);font-variant-numeric:tabular-nums;}
+  .tg-sub{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .tg-links{display:flex;gap:8px;font-size:11px;padding:0 10px 9px;}
+  .tg-links a{color:var(--cyan);text-decoration:none;}
+  .tg-links a:hover,.tg-links a:focus-visible{text-decoration:underline;}
+  .chip{display:inline-flex;align-items:center;gap:8px;background:#0e1730;border:1px solid var(--line2);
+        border-radius:30px;padding:7px 8px 7px 13px;font-size:12.5px;font-variant-numeric:tabular-nums;}
+  .chip b{font-weight:600;}
+  .chip .x{cursor:pointer;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;
+           background:#1c2742;color:var(--muted);font-size:13px;line-height:1;}
+  .chip .x:hover{background:var(--bad);color:#fff;}
+  .chips .empty2{color:var(--dim);font-size:12px;padding:2px 0;}
+  /* filas de cámara */
+  .camrow{display:grid;grid-template-columns:140px 1fr auto auto;gap:8px;align-items:center;}
+  @media(max-width:620px){.camrow{grid-template-columns:1fr 1fr;}}
+  .camrow .tg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);white-space:nowrap;}
+  /* biblioteca de vídeos subidos */
+  .vidrow{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;
+          background:#0e1730;border:1px solid var(--line2);border-radius:12px;padding:10px 12px;}
+  @media(max-width:620px){.vidrow{grid-template-columns:1fr;}}
+  .vidrow .nm{font-size:13px;font-weight:600;word-break:break-all;}
+  .vidrow .meta{font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums;margin-top:2px;}
+  .vidrow .acts{display:flex;gap:6px;flex-wrap:wrap;}
+  .upbar{height:6px;border-radius:6px;background:#1c2742;overflow:hidden;}
+  .upbar span{display:block;height:100%;width:0;border-radius:6px;
+              background:linear-gradient(90deg,#22d3ee,#6366f1);transition:width .15s;}
+  #vid_msg{font-size:12.5px;color:var(--muted);min-height:16px;}
+  #vid_msg.ok{color:var(--ok);} #vid_msg.err{color:var(--bad);}
+  /* aviso de «lo guardado no es lo que corre» en el panel de modelo */
+  .restartwarn{background:#3a2a0e;border:1px solid #7a5a12;border-radius:10px;
+               padding:11px 13px;margin:0 0 12px;font-size:12.5px;line-height:1.6;}
+  .restartwarn code{background:#0b1020;border-radius:6px;padding:1px 6px;}
+  .switch{position:relative;width:38px;height:21px;flex:0 0 auto;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .sl{position:absolute;inset:0;background:#27324f;border-radius:30px;transition:.15s;cursor:pointer;}
+  .switch .sl::before{content:"";position:absolute;width:15px;height:15px;left:3px;top:3px;background:#fff;
+                      border-radius:50%;transition:.15s;}
+  .switch input:checked+.sl{background:linear-gradient(135deg,#22d3ee,#6366f1);}
+  .switch input:checked+.sl::before{transform:translateX(17px);}
+  .savebar{position:sticky;bottom:0;display:flex;align-items:center;gap:14px;margin-top:6px;padding:14px 0 2px;}
+  .savebar .msg{font-size:12.5px;color:var(--muted);}
+  .savebar .msg.ok{color:var(--ok);} .savebar .msg.err{color:var(--bad);}
+  .toggle-line{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .preview{font-size:12px;color:var(--muted);word-break:break-all;background:#0b1020;border:1px dashed var(--line2);
+           border-radius:10px;padding:10px 12px;}
+  .preview b{color:var(--cyan);}
+
+  /* ───────── Login ───────── */
+  #app{display:none;}                 /* oculto hasta autenticar */
+  .auth{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;
+        background:
+          radial-gradient(1000px 600px at 80% -10%, #16204055 0%, transparent 60%),
+          radial-gradient(800px 500px at -10% 110%, #22d3ee18 0%, transparent 55%),
+          var(--bg);}
+  .auth[hidden]{display:none;}
+  .card{width:100%;max-width:380px;background:linear-gradient(160deg,var(--panel),#0a0f1d);
+        border:1px solid var(--line);border-radius:20px;padding:30px 26px;box-shadow:var(--glow);}
+  .card .brand{justify-content:center;border:0;padding:0 0 6px;}
+  .card .logo{width:52px;height:52px;}
+  .card h1{font-size:19px;text-align:center;margin:8px 0 2px;font-weight:800;}
+  .card .sub{text-align:center;color:var(--muted);font-size:12.5px;margin-bottom:22px;}
+  .card .field{margin-bottom:14px;}
+  .card .btn{width:100%;margin-top:4px;padding:12px;font-size:14.5px;}
+  .auth .msg{display:block;text-align:center;margin-top:12px;min-height:16px;font-size:12.5px;}
+  .auth .msg.err{color:var(--bad);} .auth .msg.ok{color:var(--ok);}
+  .hintbox{margin-top:16px;font-size:11.5px;color:var(--dim);text-align:center;line-height:1.6;}
+  .hintbox b{color:var(--muted);}
+  /* usuario actual + salir */
+  .usr{display:inline-flex;align-items:center;gap:8px;}
+  .usr .role{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--cyan);
+             background:#22d3ee14;border:1px solid #22d3ee33;border-radius:20px;padding:2px 8px;}
+  .linkbtn{cursor:pointer;color:var(--muted);font-size:12px;}
+  .linkbtn:hover{color:var(--bad);}
+  .warnbar{background:#3a2a08;border:1px solid #f59e0b55;color:#fcd34d;border-radius:12px;
+           padding:11px 14px;font-size:12.5px;margin-bottom:16px;}
+
+  /* ───────── Mobile ───────── */
+  @media(max-width:760px){
+    .app{grid-template-columns:1fr;}
+    .side{position:fixed;bottom:0;top:auto;height:auto;width:100%;flex-direction:row;z-index:50;
+          padding:8px;border-right:0;border-top:1px solid var(--line);
+          justify-content:space-around;background:#070b14f2;backdrop-filter:blur(12px);}
+    .brand,.side .foot{display:none;}
+    nav{flex-direction:row;margin:0;gap:0;width:100%;justify-content:space-around;}
+    .nav{flex-direction:column;gap:3px;font-size:10px;padding:6px 8px;}
+    .nav span.lbl{font-size:10px;} .nav svg{width:21px;height:21px;}
+    main{padding:16px 14px 90px;}
+    .top{padding:14px 16px;} .top h1{font-size:15px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ───── Pantalla de inicio de sesión ───── -->
+<div class="auth" id="login">
+  <div class="card">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 48 48" fill="none">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs>
+        <path d="M24 3l17 7v11c0 10.5-7.2 19.6-17 24-9.8-4.4-17-13.5-17-24V10z" fill="url(#lg)" opacity=".18"/>
+        <path d="M24 3l17 7v11c0 10.5-7.2 19.6-17 24-9.8-4.4-17-13.5-17-24V10z" stroke="url(#lg)" stroke-width="2"/>
+        <circle cx="24" cy="21" r="4.2" stroke="url(#lg)" stroke-width="2"/>
+        <path d="M24 25v8M14 17l6 2M34 17l-6 2" stroke="url(#lg)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1>Trans<span style="background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">LowNet</span></h1>
+    <div class="sub">Centro de Monitoreo · Inicia sesión</div>
+    <form id="login_form" autocomplete="on">
+      <div class="field"><label>Usuario</label>
+        <input type="text" id="lg_user" placeholder="admin" autocomplete="username" autofocus></div>
+      <div class="field"><label>Contraseña</label>
+        <input type="password" id="lg_pass" placeholder="••••••" autocomplete="current-password"></div>
+      <button class="btn primary" type="submit">Entrar</button>
+    </form>
+    <span class="msg" id="lg_msg"></span>
+    <div class="hintbox">Acceso por defecto: <b>admin / admin</b> · <b>usuario / usuario</b><br>(cámbialas tras el primer ingreso)</div>
+  </div>
+</div>
+
+<!-- ───── Modal: cambio de contraseña forzado ───── -->
+<div class="auth" id="pwmodal" hidden>
+  <div class="card">
+    <h1>Cambia tu contraseña</h1>
+    <div class="sub">Estás usando la contraseña por defecto. Define una nueva para continuar.</div>
+    <form id="pw_form">
+      <div class="field"><label>Nueva contraseña</label>
+        <input type="password" id="pw_new" placeholder="mínimo 4 caracteres" autocomplete="new-password"></div>
+      <div class="field"><label>Repite la contraseña</label>
+        <input type="password" id="pw_new2" placeholder="repite" autocomplete="new-password"></div>
+      <button class="btn primary" type="submit">Guardar y continuar</button>
+    </form>
+    <span class="msg" id="pw_msg"></span>
+  </div>
+</div>
+
+<!-- ───── Modal: editor de corredor (Contador de flujo) ───── -->
+<div class="auth" id="zonemodal" hidden>
+  <div class="card">
+    <h1 style="margin-bottom:4px">Corredor de conteo · <span id="z_cam"></span></h1>
+    <div class="zhelp" id="z_help">Haz clic en 4 puntos sobre la puerta/paso para dibujar el box. Los 2 primeros marcan el lado AFUERA.</div>
+    <div class="zwrap"><canvas id="z_canvas" width="640" height="400"></canvas></div>
+    <div class="zctl">
+      <label>Líneas <input type="range" id="z_nlines" min="1" max="9" step="1" value="5">
+        <b id="z_nlines_v">5</b></label>
+      <label><input type="checkbox" id="z_invert"> Invertir entrada/salida</label>
+      <label><input type="checkbox" id="z_axisrot"> Rotar eje 90°</label>
+    </div>
+    <div class="zrow">
+      <button class="btn sm" type="button" id="z_clear">Borrar</button>
+      <button class="btn sm" type="button" id="z_cancel">Cerrar</button>
+      <button class="btn primary sm" type="button" id="z_save">Guardar corredor</button>
+    </div>
+    <span class="zmsg" id="z_msg"></span>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <!-- ───── Sidebar ───── -->
+  <aside class="side">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 48 48" fill="none">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs>
+        <path d="M24 3l17 7v11c0 10.5-7.2 19.6-17 24-9.8-4.4-17-13.5-17-24V10z" fill="url(#g)" opacity=".18"/>
+        <path d="M24 3l17 7v11c0 10.5-7.2 19.6-17 24-9.8-4.4-17-13.5-17-24V10z" stroke="url(#g)" stroke-width="2"/>
+        <circle cx="24" cy="21" r="4.2" stroke="url(#g)" stroke-width="2"/>
+        <path d="M24 25v8M14 17l6 2M34 17l-6 2" stroke="url(#g)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="name">{{BRAND}}</div>
+        <div class="tag">{{BRAND_TAGLINE}}</div>
+      </div>
+    </div>
+    <nav>
+      <div class="nav active" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h8V3H3zM13 21h8V3h-8zM3 21h8v-6H3z" stroke-linejoin="round"/></svg><span class="lbl">Dashboard</span></div>
+      <div class="nav" data-page="dashboard" data-scroll="p_cams"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 7h15v10H2zM17 10l5-3v10l-5-3" stroke-linejoin="round"/></svg><span class="lbl">Cámaras</span></div>
+      <div class="nav" data-page="dashboard" data-scroll="p_events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linejoin="round"/></svg><span class="lbl">Eventos</span></div>
+      <div class="nav" data-page="dashboard" data-scroll="p_map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3 2 6v15l7-3 6 3 7-3V3l-7 3-6-3Zm0 0v15m6-12v15" stroke-linejoin="round"/></svg><span class="lbl">Mapa</span></div>
+      <div class="nav" data-page="config" id="nav-config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H7a1.6 1.6 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1H23a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg><span class="lbl">Config</span></div>
+    </nav>
+    <div class="foot">
+      <div><b id="f_dev">—</b></div>
+      <div id="f_site">—</div>
+      <div style="margin-top:8px"><span id="f_user">—</span> · <span class="linkbtn" id="f_logout">salir</span></div>
+      <div style="margin-top:6px">{{BRAND}} · {{BRAND_VERSION}}</div>
+    </div>
+  </aside>
+
+  <!-- ───── Main ───── -->
+  <div class="main">
+    <header class="top">
+      <div>
+        <h1>Centro de Monitoreo<small id="site2">—</small></h1>
+      </div>
+      <div class="sp"></div>
+      <div class="pills">
+        <span class="pill usr"><span id="t_user">—</span><span class="role" id="t_role">—</span></span>
+        <span class="pill"><span class="dot net" id="netdot"></span><span id="net">local</span></span>
+        <span class="pill"><span class="dot" id="livedot"></span><span id="live">conectando…</span></span>
+        <span class="pill" id="clock">—</span>
+        <span class="pill linkbtn" id="t_logout">Salir</span>
+      </div>
+    </header>
+
+    <main>
+     <section class="page" id="page-dashboard">
+      <section class="kpis">
+        <div class="kpi">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 7h15v10H2zM17 10l5-3v10l-5-3" stroke-linejoin="round"/></svg></div>
+          <div class="v" id="k_cams">0/0</div><div class="l">Cámaras en línea</div>
+        </div>
+        <div class="kpi" id="k_anom_card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linejoin="round"/></svg></div>
+          <div class="v" id="k_anom">0</div><div class="l">Detecciones activas</div>
+        </div>
+        <div class="kpi">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4" stroke-linejoin="round" stroke-linecap="round"/></svg></div>
+          <div class="v" id="k_events">0</div><div class="l">Eventos detectados</div>
+        </div>
+        <div class="kpi">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg></div>
+          <div class="v" id="k_speed">—</div><div class="l">Velocidad (km/h)</div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel" id="p_cams">
+          <div class="ph"><h2>Cámaras en vivo</h2><span class="badge" id="cams_badge">—</span></div>
+          <div id="cams"><div class="empty">Esperando cámaras…</div></div>
+        </div>
+        <div class="col">
+          <div class="panel" id="p_map">
+            <div class="ph"><h2>Ubicación del vehículo</h2><span class="badge" id="gps_badge">GPS</span></div>
+            <canvas id="map"></canvas>
+            <div class="gpsline" id="gpsline">Sin señal GPS</div>
+          </div>
+          <div class="panel" id="p_events">
+            <div class="ph"><h2>Eventos de detección</h2><span class="badge" id="ev_badge">0</span></div>
+            <div id="events"><div class="empty">Sin eventos todavía.</div></div>
+          </div>
+        </div>
+      </section>
+     </section><!-- /page-dashboard -->
+
+     <!-- ───── Página: Configuración ───── -->
+     <section class="page" id="page-config" hidden>
+      <div class="cfgwrap">
+
+        <!-- 0 · Novedades / estado -->
+        <div class="panel wide">
+          <div class="ph"><h2>Novedades · actualizado 2026-08-18</h2><span class="badge">v8</span></div>
+          <div class="pbody">
+            <ul style="margin:0;padding-left:18px;line-height:1.7;color:var(--muted)">
+              <li><b>Videos como cámara</b> (sección 3) — sube un archivo (.mp4, .mov, .mkv…) y analízalo como si fuera una cámara: se reproduce en bucle, a su velocidad real, con los mismos eventos, clips y alertas. Ya no hace falta un RTSP para probar la plataforma.</li>
+              <li><b>Mapa de México offline</b> — la ubicación del vehículo se dibuja sobre el contorno de los estados, sin internet (GPS NEO-6M; modo simulado disponible).</li>
+              <li><b>Panel de modelo</b> (sección 9) — ves el detector/clasificador en uso y puedes cambiarlos (se aplica al reiniciar el nodo).</li>
+              <li><b>Usuarios</b> (sección 10) — crear y borrar cuentas, además de cambiar contraseñas.</li>
+              <li><b>Guardado unificado</b> — «Guardar configuración» también registra el usuario del formulario y la selección de modelo.</li>
+              <li><b>Persistencia arreglada</b> — las contraseñas y la configuración se guardan de forma fiable (ruta anclada al nodo).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 1 · Vehículo -->
+        <div class="panel">
+          <div class="ph"><span class="step">1</span><h2>Vehículo</h2></div>
+          <div class="pbody">
+            <div class="row2">
+              <div class="field"><label>ID del nodo</label><input type="text" id="v_id" placeholder="jetson-001"></div>
+              <div class="field"><label>Placa</label><input type="text" id="v_plate" placeholder="P 123-456"></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Ruta / sitio</label><input type="text" id="v_site" placeholder="Ruta 7 · Bus 12"></div>
+              <div class="field"><label>Conductor</label><input type="text" id="v_driver" placeholder="Nombre del conductor"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 · Cámaras -->
+        <div class="panel wide">
+          <div class="ph"><span class="step">2</span><h2>Cámaras</h2><span class="badge" id="cam_count">0</span></div>
+          <div class="pbody">
+            <div id="cam_list" class="pbody" style="padding:0;gap:10px"></div>
+            <datalist id="video_urls"></datalist>
+            <button class="btn sm" id="cam_add" style="align-self:flex-start">+ Agregar cámara</button>
+            <div class="hint">Cada fuente puede ser: <b>RTSP</b> (p. ej. <b>rtsp://usuario:clave@192.168.1.10:554/stream1</b>; NVR Hikvision: <b>.../Streaming/Channels/101, 201, 301, 401</b> para canales 1-4), una <b>cámara USB</b> (<b>/dev/video0</b>) o un <b>vídeo subido</b> (<b>file://mi-video.mp4</b>, sección 3). Los cambios se aplican al <b>Guardar</b>, sin reiniciar.</div>
+          </div>
+        </div>
+
+        <!-- 3 · Videos -->
+        <div class="panel wide">
+          <div class="ph"><span class="step">3</span><h2>Videos</h2><span class="badge" id="vid_count">0</span></div>
+          <div class="pbody">
+            <div class="addrow">
+              <input type="file" id="vid_file" accept="video/*">
+              <button class="btn primary sm" id="vid_upload">Subir vídeo</button>
+            </div>
+            <div class="upbar" id="vid_bar" hidden><span></span></div>
+            <span class="msg" id="vid_msg"></span>
+            <div id="vid_list" class="pbody" style="padding:0;gap:8px"></div>
+            <div class="hint">¿No hay cámara a mano? Sube un vídeo y úsalo como si lo fuera: se reproduce <b>en bucle</b> y a su velocidad real, y el modelo lo analiza igual que a un RTSP (mismos eventos, clips y alertas). Pulsa <b>Usar como cámara</b> y luego <b>Guardar configuración</b>.</div>
+          </div>
+        </div>
+
+        <!-- 3 · Teléfonos seguros (SMS) -->
+        <div class="panel">
+          <div class="ph"><span class="step">4</span><h2>Teléfonos seguros (SMS)</h2></div>
+          <div class="pbody">
+            <div class="addrow">
+              <input type="tel" id="in_sms" placeholder="+503 7777 8888" inputmode="tel">
+              <button class="btn primary sm" data-add="sms">Agregar</button>
+            </div>
+            <div class="chips" id="chips_sms"></div>
+            <div class="hint">Reciben un SMS con la alerta y el link de ubicación. Funciona con red celular aunque no haya datos.</div>
+          </div>
+        </div>
+
+        <!-- 4 · Correo -->
+        <div class="panel">
+          <div class="ph"><span class="step">5</span><h2>Correo electrónico</h2></div>
+          <div class="pbody">
+            <div class="addrow">
+              <input type="email" id="in_email" placeholder="seguridad@empresa.com">
+              <button class="btn primary sm" data-add="emails">Agregar</button>
+            </div>
+            <div class="chips" id="chips_emails"></div>
+            <div class="hint">Se envía un correo con los datos del evento (requiere internet/4G).</div>
+          </div>
+        </div>
+
+        <!-- 5 · WhatsApp -->
+        <div class="panel">
+          <div class="ph"><span class="step">6</span><h2>WhatsApp</h2></div>
+          <div class="pbody">
+            <div class="addrow">
+              <input type="tel" id="in_whatsapp" placeholder="+503 7777 8888" inputmode="tel">
+              <button class="btn primary sm" data-add="whatsapp">Agregar</button>
+            </div>
+            <div class="chips" id="chips_whatsapp"></div>
+            <div class="hint">Requiere internet/4G y API de WhatsApp (se configura el envío en el siguiente paso).</div>
+          </div>
+        </div>
+
+        <!-- 6 · Telegram -->
+        <div class="panel">
+          <div class="ph"><span class="step">7</span><h2>Telegram</h2><span class="badge">activo</span></div>
+          <div class="pbody">
+            <div class="field"><label>Token del bot (@BotFather)</label>
+              <div class="addrow">
+                <input type="password" id="tg_token" placeholder="123456789:AA..." autocomplete="off">
+                <button type="button" class="btn icon sm" id="tg_eye" title="Mostrar / ocultar token">👁</button>
+              </div>
+              <div class="hint">Crea el bot con <b>@BotFather</b>, copia el token aquí. El chat id se obtiene con <b>@userinfobot</b> o escribiéndole al bot.</div>
+            </div>
+            <div class="addrow">
+              <input type="text" id="in_telegram" placeholder="chat id numérico, ej. 123456789" inputmode="numeric">
+              <button class="btn primary sm" data-add="telegram">Agregar</button>
+            </div>
+            <div class="chips" id="chips_telegram"></div>
+            <div class="hint">El chat id es un <b>número</b>, no un @usuario. Escríbele <b>Start</b> a tu bot y pulsa "Detectar".</div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <button class="btn sm" id="tg_detect">Detectar mi chat id</button>
+              <button class="btn sm" id="tg_test">Probar envío</button>
+              <span class="msg" id="tg_msg"></span>
+            </div>
+            <div class="hint">Gratis. Requiere internet/4G. <b>Guarda</b> antes de detectar o probar.</div>
+          </div>
+        </div>
+
+        <!-- 7 · Opciones de alerta -->
+        <div class="panel wide">
+          <div class="ph"><span class="step">8</span><h2>Opciones de alerta</h2></div>
+          <div class="pbody">
+            <div class="toggle-line">
+              <div><label style="font-size:13.5px">Enviar alertas automáticamente</label>
+                <div class="hint">Si está <b>apagado</b>, NO se manda nada al activarse un evento (solo "Probar envío"). Enciéndelo cuando esté en producción.</div></div>
+              <label class="switch"><input type="checkbox" id="o_enabled"><span class="sl"></span></label>
+            </div>
+            <div class="toggle-line">
+              <div><label style="font-size:13.5px">Incluir link de ubicación</label>
+                <div class="hint">Adjunta un enlace al mapa con la posición GPS cuando se dispara un evento.</div></div>
+              <label class="switch"><input type="checkbox" id="o_loc"><span class="sl"></span></label>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Proveedor de mapa</label>
+                <select id="o_map"><option value="google">Google Maps</option><option value="osm">OpenStreetMap</option></select></div>
+              <div class="field"><label>Umbral global por defecto (score 0–1)</label>
+                <input type="number" id="o_thr" min="0" max="1" step="0.01" placeholder="0.55">
+                <span class="hint">Lo usan las cámaras sin umbral propio. El umbral por cámara se ajusta en su mosaico (vista en vivo).</span></div>
+            </div>
+            <div class="preview" id="loc_preview">Ejemplo de link: <b>https://maps.google.com/?q=13.6929,-89.2182</b></div>
+          </div>
+        </div>
+
+        <!-- 8 · Modelo de detección -->
+        <div class="panel wide">
+          <div class="ph"><span class="step">9</span><h2>Modelo de detección</h2></div>
+          <div class="pbody">
+            <div class="hint" style="margin-bottom:10px">Modelo <b>en ejecución
+              ahora</b>: <b id="m_running">—</b> · seleccionado: <b id="m_active">—</b>.
+              El modelo se elige <b>al arrancar</b> el nodo: guardar aquí no lo cambia
+              en caliente.</div>
+            <div id="m_warn" class="restartwarn" hidden></div>
+
+            <!-- Modelos integrados (análisis por clip) -->
+            <h3 style="margin:6px 0 4px;font-size:.95rem">Modelos integrados</h3>
+            <div id="m_vad_list"></div>
+            <div class="gpsline" style="padding:6px 0">
+              <span>Backend <b id="m_backend">—</b></span>
+              <span>Modelo <b id="m_name">—</b></span>
+              <span>Dispositivo <b id="m_device">—</b></span>
+            </div>
+            <div class="row2" id="m_weights">
+              <div class="field"><label>Detector</label>
+                <select id="m_det"></select></div>
+              <div class="field"><label>Clasificador de clases</label>
+                <select id="m_cls"></select></div>
+            </div>
+
+            <!-- Modelos enchufables (plugins) -->
+            <h3 style="margin:14px 0 4px;font-size:.95rem">Modelos enchufables (plugins)</h3>
+            <div id="m_heur_list"></div>
+            <div class="hint" id="m_heur_empty" style="display:none">No hay modelos
+              enchufables en <code>heuristicModels/</code> todavía.</div>
+
+            <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+              <button class="btn primary sm" id="m_save">Guardar modelo</button>
+              <span class="msg" id="m_msg"></span>
+            </div>
+            <div class="hint" id="m_hint">El cambio de modelo se aplica al <b>reiniciar el nodo</b>.</div>
+          </div>
+        </div>
+
+        <!-- 9 · Usuarios -->
+        <div class="panel wide">
+          <div class="ph"><span class="step">10</span><h2>Usuarios y contraseñas</h2></div>
+          <div class="pbody">
+            <div id="users_list" style="display:flex;flex-direction:column;gap:10px"></div>
+            <div class="hint">Cambia las contraseñas o borra cuentas. Las cuentas por defecto son inseguras: cámbialas.</div>
+            <div style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px">
+              <label style="font-weight:700;display:block;margin-bottom:8px">Crear usuario nuevo</label>
+              <div class="camrow">
+                <input type="text" id="nu_user" placeholder="nombre de usuario" autocomplete="off">
+                <input type="password" id="nu_pass" placeholder="contraseña (mín. 4)" autocomplete="new-password">
+                <select id="nu_role"><option value="user">usuario</option><option value="admin">admin</option></select>
+                <button class="btn primary sm" id="nu_add">Crear</button>
+              </div>
+              <span class="msg" id="nu_msg"></span>
+              <div class="hint">También se registra al pulsar <b>Guardar configuración</b> abajo.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10 · Testigos -->
+        <div class="panel wide" id="tg_panel" hidden>
+          <div class="ph"><span class="step">11</span><h2>Testigos</h2><span class="badge" id="tg_count">0</span></div>
+          <div class="pbody">
+            <div class="tg-bar">
+              <select id="tg_cam" style="min-width:160px"></select>
+              <select id="tg_limit">
+                <option value="30">últimos 30</option>
+                <option value="60" selected>últimos 60</option>
+                <option value="120">últimos 120</option>
+              </select>
+              <button class="btn sm" id="tg_reload">Actualizar</button>
+              <span class="msg" id="tg_gmsg"></span>
+            </div>
+            <div id="tg_grid" class="tg-grid"></div>
+            <div class="hint">Foto de cada persona que cruza el corredor, guardada por el
+              contador en el momento del cruce. La miniatura es el <b>recorte</b> de la
+              persona; «fotograma» abre la escena completa con la caja dibujada. Solo se
+              ven desde aquí, en el panel de administrador.</div>
+          </div>
+        </div>
+
+        <!-- 12 · Galería de rostros (modelo de reconocimiento facial) -->
+        <div class="panel wide" id="gal_panel" hidden>
+          <div class="ph"><span class="step">12</span><h2>Rostros registrados</h2>
+            <span class="badge" id="gal_count">0</span></div>
+          <div class="pbody">
+            <div class="addrow">
+              <input type="text" id="gal_person" placeholder="Nombre de la persona" style="min-width:180px">
+              <input type="file" id="gal_files" accept="image/*" multiple>
+              <button class="btn primary sm" id="gal_upload">Añadir fotos</button>
+              <button class="btn sm" id="gal_rebuild" title="Vuelve a extraer los rasgos de todas las fotos y los aplica en caliente, sin reiniciar el nodo.">Reconstruir galería</button>
+            </div>
+            <span class="msg" id="gal_msg"></span>
+            <div class="galwarn" id="gal_warn" hidden></div>
+            <div id="gal_grid" class="gal-grid"></div>
+            <div class="hint">Estas son las personas que el modelo puede reconocer por su
+              nombre. Sube <b>2-4 fotos de frente</b> por persona, con la cara bien visible;
+              cada foto se convierte en un vector de rasgos y el nombre se decide por
+              votación a lo largo del tiempo. Al añadir o borrar fotos hay que pulsar
+              <b>Reconstruir galería</b> para que el cambio afecte al reconocimiento.
+              Estas fotos solo se ven aquí, en el panel de administrador.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="savebar">
+        <button class="btn primary" id="cfg_save">Guardar configuración</button>
+        <button class="btn" id="cfg_reload">Descartar cambios</button>
+        <span class="msg" id="cfg_msg"></span>
+      </div>
+     </section><!-- /page-config -->
+    </main>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const tiles={};let trail=[];let evCount=0;
+const THR={global:null,cameras:{}};   // umbral global y overrides por cámara
+const ROT={cameras:{}};                // rotación por cámara (grados), keyed por camera_id
+const fmt=(n,d=0)=>(n==null)?'—':Number(n).toFixed(d);
+const clock=()=>$('clock').textContent=new Date().toLocaleTimeString();
+setInterval(clock,1000);clock();
+
+async function loadCameras(){try{const res=await fetch('/api/cameras');
+  if(res.status===401){onAuthLost();return;}
+  const list=await res.json();if(!Array.isArray(list))return;
+  list.forEach(addTile);
+  Object.keys(tiles).forEach(id=>{if(!list.includes(id))removeTile(id);});}catch(e){}}
+function removeTile(id){const el=tiles[id];if(!el)return;el.remove();delete tiles[id];
+  $('cams_badge').textContent=Object.keys(tiles).length+' activas';}
+function addTile(id){
+  if(tiles[id])return;const c=$('cams');const ph=c.querySelector('.empty');if(ph)ph.remove();
+  const el=document.createElement('div');el.className='cam';el.id='cam-'+id;
+  el.innerHTML=`<div class="frame">
+                  <div class="ov"><span class="nm"></span><span class="badge" id="bd-${id}">--</span></div>
+                  <img alt="${id}">
+                  <div class="thrctl"><span>umbral</span>
+                    <input type="number" min="0" max="1" step="0.01" id="thr-${id}" placeholder="global"
+                           title="Umbral de detección de esta cámara. Vacío = usa el global.">
+                    <span class="rotctl"><span>giro</span>
+                      <select id="rot-${id}" title="Rotación de la imagen. Afecta la vista en vivo Y los frames que analiza el modelo.">
+                        <option value="0">0°</option><option value="90">90°</option>
+                        <option value="180">180°</option><option value="270">270°</option></select></span>
+                    <button type="button" class="zonebtn" id="zone-${id}" title="Dibujar el corredor (entradas/salidas) de esta cámara">✎ Zonas</button>
+                    <span class="thrhint" id="thrh-${id}"></span></div>
+                </div>
+                <div class="counts" id="cnt-${id}" hidden>
+                  <span class="ci"><b id="cin-${id}">0</b><i>entraron</i></span>
+                  <span class="co"><b id="cout-${id}">0</b><i>salieron</i></span>
+                  <span class="cd"><b id="cins-${id}">0</b><i>dentro</i></span></div>
+                <div class="meta" id="meta-${id}"></div>
+                <div class="faces" id="fc-${id}" hidden></div>`;
+  el.querySelector('.nm').textContent=id;
+  el.querySelector('img').src='/stream/'+encodeURIComponent(id);
+  c.appendChild(el);tiles[id]=el;$('cams_badge').textContent=Object.keys(tiles).length+' activas';
+  const inp=$('thr-'+id);inp.addEventListener('change',()=>saveThr(id,inp.value.trim()));
+  const rsel=$('rot-'+id);rsel.addEventListener('change',()=>saveRot(id,rsel.value));
+  $('zone-'+id).addEventListener('click',()=>openZoneEditor(id));
+  el.querySelector('.counts .cd').addEventListener('click',()=>setInsidePrompt(id));
+  applyThr(id);applyRot(id);renderMeta(id);
+}
+function applyThr(id){const inp=$('thr-'+id),h=$('thrh-'+id);if(!inp)return;
+  const own=THR.cameras[id];
+  if(document.activeElement!==inp)inp.value=(own==null?'':own);
+  if(h)h.textContent=(own==null)?('global '+fmt(THR.global,2)):'propio';
+}
+async function saveThr(id,val){const h=$('thrh-'+id);if(h)h.textContent='…';
+  try{const r=await(await fetch('/api/camera_threshold',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({camera_id:id,thr:(val===''?null:val)})})).json();
+    if(r.ok){if(r.thr==null)delete THR.cameras[id];else THR.cameras[id]=r.thr;applyThr(id);}
+    else if(h)h.textContent=r.error||'error';
+  }catch(e){if(h)h.textContent='error';}}
+async function loadThresholds(){try{const res=await fetch('/api/thresholds');
+  if(res.status===401){onAuthLost();return;}
+  const d=await res.json();THR.global=d.global;THR.cameras=d.cameras||{};
+  Object.keys(tiles).forEach(applyThr);}catch(e){}}
+function applyRot(id){const s=$('rot-'+id);if(!s)return;
+  if(document.activeElement!==s)s.value=String(ROT.cameras[id]||0);}
+async function saveRot(id,deg){
+  try{const r=await(await fetch('/api/camera_rotation',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({camera_id:id,rotate:parseInt(deg,10)||0})})).json();
+    if(r.ok){if(!r.rotate)delete ROT.cameras[id];else ROT.cameras[id]=r.rotate;applyRot(id);}
+  }catch(e){}}
+async function loadRotations(){try{const res=await fetch('/api/rotations');
+  if(res.status===401){onAuthLost();return;}
+  const d=await res.json();ROT.cameras=d.cameras||{};
+  Object.keys(tiles).forEach(applyRot);}catch(e){}}
+/* Conteos entradas/salidas/dentro por cámara (modelos que cuentan, p. ej. Contador de flujo). */
+async function loadCounts(){try{const res=await fetch('/api/counts');
+  if(res.status===401){onAuthLost();return;}
+  const d=await res.json();
+  const cams=(d&&d.supported)?(d.cameras||{}):{};
+  Object.keys(tiles).forEach(id=>{
+    const box=$('cnt-'+id),c=cams[id];
+    if(!box)return;
+    if(c){box.hidden=false;
+      $('cin-'+id).textContent=c.in??0;$('cout-'+id).textContent=c.out??0;$('cins-'+id).textContent=c.inside??0;}
+    else box.hidden=true;   // esta cámara/modelo no cuenta -> sin marcador
+  });
+}catch(e){}}
+/* Admin: fija cuántas personas hay ADENTRO (reinicia entradas/salidas y cuenta
+   desde ese número). Poner 0 = reiniciar el contador. */
+async function setInsidePrompt(id){
+  if(ROLE!=='admin')return;
+  const cur=($('cins-'+id)||{}).textContent||'0';
+  const v=prompt('¿Cuántas personas hay ADENTRO de "'+id+'" ahora?\n'+
+                 '(reinicia entradas/salidas y cuenta desde este número; 0 = reiniciar)',cur);
+  if(v===null)return;
+  const n=parseInt(v,10);
+  if(isNaN(n)||n<0){alert('Escribe un número entero mayor o igual a 0.');return;}
+  try{const res=await fetch('/api/counts',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({camera_id:id,inside:n})});
+    if(res.status===401){onAuthLost();return;}
+    const d=await res.json();
+    if(!d.ok){alert('No se pudo fijar: '+(d.error||'error'));return;}
+    loadCounts();   // refresca el marcador
+  }catch(e){alert('No se pudo conectar con el servidor.');}}
+function onTelemetry(m){
+  addTile(m.camera_id);const bd=$('bd-'+m.camera_id),el=$('cam-'+m.camera_id);
+  if(bd)bd.textContent=m.score.toFixed(2)+' · '+(m.anomaly?m.class_name:'Normal');
+  if(el)el.classList.toggle('anom',!!m.anomaly);
+  // Latencia de inferencia por cámara -> overlay.
+  const s=STATS.cameras[m.camera_id]||(STATS.cameras[m.camera_id]={});
+  if(m.latency!=null)s.latency=m.latency;
+  renderMeta(m.camera_id);
+}
+/* ───────── Overlay de metadata en vivo (fecha/hora, FPS, latencia, costo) ───────── */
+let MODEL_NAME='';   // modelo activo del nodo (mismo para todas las cámaras)
+const STATS={cpu:null,mem:null,mem_used_mb:null,mem_total_mb:null,cameras:{}};
+function onStats(m){
+  STATS.cpu=m.cpu??STATS.cpu;STATS.mem=m.mem??STATS.mem;
+  STATS.mem_used_mb=m.mem_used_mb??STATS.mem_used_mb;STATS.mem_total_mb=m.mem_total_mb??STATS.mem_total_mb;
+  const cams=m.cameras||{};
+  Object.keys(cams).forEach(id=>{
+    const s=STATS.cameras[id]||(STATS.cameras[id]={});
+    if(cams[id].fps!=null)s.fps=cams[id].fps;
+    if(cams[id].latency!=null)s.latency=cams[id].latency;
+  });
+  renderAllMeta();
+}
+function nowStr(){const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}
+/* Grid de telemetría bajo el vídeo. Cada celda es <i>etiqueta</i> + <b>valor</b>.
+   Antes esto iba escrito ENCIMA del frame (y la parte de rostros, quemada en la imagen
+   por el propio modelo): tapaba la escena y no se podía copiar ni leer de un vistazo. */
+const FACES={cameras:{},modelo:null,galeria:null,supported:false};
+function cel(etq,val,cls,wide){
+  return `<div class="m${wide?' wide':''}"><i>${etq}</i><b class="${cls||''}">${val}</b></div>`;}
+function renderMeta(id){
+  const e=$('meta-'+id);if(!e)return;
+  const s=STATS.cameras[id]||{};
+  const f=FACES.cameras[id]||null;
+  const fps=(s.fps!=null)?s.fps.toFixed(1):'—';
+  const lat=(s.latency!=null)?Math.round(s.latency)+' ms':'—';
+  const cpu=(STATS.cpu!=null)?STATS.cpu+'%':'—';
+  const mem=(STATS.mem!=null)?STATS.mem+'%':'—';
+  const cpuHot=(STATS.cpu!=null&&STATS.cpu>=85)?'hot':'';
+  const memHot=(STATS.mem!=null&&STATS.mem>=85)?'hot':'';
+  let h=cel('hora',nowStr().slice(11),'',false)
+       +cel('fps',fps,'',false)
+       +cel('latencia',lat,'',false)
+       +cel('cpu',cpu,cpuHot,false)
+       +cel('ram',mem,memHot,false);
+  if(f){
+    /* Modelo de rostros activo: personas primero, que es el orden real de la escena. */
+    h+=cel('personas',f.personas??0,(f.personas?'ok':''),false)
+      +cel('rostros',f.rostros??0,'',false)
+      +cel('reconocidos',f.reconocidos??0,(f.reconocidos?'ok':''),false)
+      +cel('desconocidos',f.desconocidos??0,(f.desconocidos?'bad':''),false)
+      +cel('sin rostro',f.sin_rostro??0,'',false)
+      +cel('scrfd',(f.det_size||'—')+' px','',false)
+      +cel('umbral id',(f.thr!=null?f.thr.toFixed(2):'—'),'',false)
+      +cel('yolo pers.',(f.yolo_ms!=null?f.yolo_ms+' ms':'—'),'',false)
+      +cel('rostros ms',(f.lat_ms!=null?f.lat_ms+' ms':'—'),'',false)
+      +cel('galería',`${f.galeria?.personas??0} pers · ${f.galeria?.rostros??0} fotos`,'',true);
+  }
+  if(MODEL_NAME)h+=cel('modelo',MODEL_NAME,'mdl',true);
+  e.innerHTML=h;
+  renderFaces(id,f);
+}
+/* Una fila por rostro visible: quién es, su confianza de identidad y la demografía. */
+function renderFaces(id,f){
+  const box=$('fc-'+id);if(!box)return;
+  const caras=(f&&f.caras)||[];
+  if(!caras.length){box.hidden=true;box.innerHTML='';return;}
+  box.hidden=false;
+  box.innerHTML=caras.map(c=>{
+    const kn=(c.estado==='reconocido'),pd=(c.estado==='analizando');
+    const cls=kn?'kn':(pd?'pd':'un');
+    const who=kn?c.nombre:(pd?('id'+c.id+' analizando…'):('id'+c.id+' desconocido'));
+    const demo=[c.sexo==='M'?'hombre':(c.sexo==='F'?'mujer':''),c.edad?(c.edad+' a'):'']
+                 .filter(Boolean).join(' · ');
+    const conf=kn?('id '+c.score.toFixed(2)):('cara '+(c.det_score??0).toFixed(2));
+    return `<div class="f ${cls}"><span class="who">${who}</span>`
+          +(demo?`<span class="dm">${demo}</span>`:'')
+          +`<span class="cf">${conf}</span></div>`;}).join('');
+}
+/* Escena de rostros/personas: el modelo la publica en /api/faces (duck-typing en el
+   servidor, así que con otro modelo activo simplemente no viene y el grid no la pinta). */
+async function loadFaces(){try{const res=await fetch('/api/faces');
+  if(res.status===401){onAuthLost();return;}
+  const d=await res.json();
+  FACES.supported=!!(d&&d.supported);
+  FACES.cameras=(FACES.supported?(d.cameras||{}):{});
+  FACES.modelo=d&&d.modelo||null;FACES.galeria=d&&d.galeria||null;
+  renderAllMeta();
+}catch(e){}}
+function renderAllMeta(){Object.keys(tiles).forEach(renderMeta);}
+setInterval(renderAllMeta,1000);   // reloj en vivo (fecha/hora)
+function onEvent(m){
+  const box=$('events');const ph=box.querySelector('.empty');if(ph)ph.remove();
+  const el=document.createElement('div');el.className='ev'+(m.state==='closed'?' closed':'');
+  const t=new Date(m.t_start).toLocaleTimeString();
+  el.innerHTML=`<div class="bar"></div><div><div class="t">${m.class_name}</div>
+     <div class="m">${m.camera_id} · score ${m.max_score.toFixed(2)} · ${t}</div></div>
+     <div class="tag">${m.state==='open'?'activo':'cerrado'}</div>`;
+  box.prepend(el);$('ev_badge').textContent=(++evCount);
+}
+function onGps(m){
+  $('gpsline').innerHTML = m.fix
+    ? `<span>LAT <b>${fmt(m.lat,5)}</b></span><span>LON <b>${fmt(m.lon,5)}</b></span><span>VEL <b>${fmt(m.speed_kmh,1)}</b> km/h</span>`
+    : 'Sin señal GPS';
+  $('gps_badge').textContent=m.fix?'GPS OK':'sin fix';
+  if(m.jump)trail.length=0;   // salto de ubicación: reinicia el rastro (no cruza el país)
+  if(m.lat!=null){trail.push([m.lat,m.lon]);if(trail.length>140)trail.shift();drawMap();}
+  if(m.speed_kmh!=null)$('k_speed').textContent=fmt(m.speed_kmh,0);
+}
+// Mapa offline: contorno de los estados de México servido por el propio nodo.
+let MX=null, MX_TRIED=false;
+const MXBB={lon0:-118.4,lon1:-86.7,lat0:14.4,lat1:32.8};   // bounding box de México
+function loadMexico(){if(MX||MX_TRIED)return;MX_TRIED=true;
+  fetch('/assets/mexico_states.json').then(r=>r.json()).then(j=>{MX=j;drawMap();}).catch(()=>{});}
+function mapProj(w,h){
+  // equirectangular con corrección de longitud por latitud media; encaja México con margen.
+  const pad=8, latm=(MXBB.lat0+MXBB.lat1)/2, k=Math.cos(latm*Math.PI/180);
+  const gw=(MXBB.lon1-MXBB.lon0)*k, gh=(MXBB.lat1-MXBB.lat0);
+  const s=Math.min((w-2*pad)/gw,(h-2*pad)/gh);
+  const ox=(w-gw*s)/2, oy=(h-gh*s)/2;
+  return {X:lon=>ox+(lon-MXBB.lon0)*k*s, Y:lat=>oy+(MXBB.lat1-lat)*s};
+}
+function drawMap(){
+  const cv=$('map'),x=cv.getContext('2d');const w=cv.width=cv.clientWidth||640,h=cv.height=230;
+  x.clearRect(0,0,w,h);x.fillStyle='#0a0f1d';x.fillRect(0,0,w,h);
+  const P=mapProj(w,h);
+  if(MX){x.lineWidth=1;x.strokeStyle='#2a4168';x.fillStyle='#111d34';
+    MX.features.forEach(f=>{const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;
+      polys.forEach(poly=>poly.forEach(ring=>{x.beginPath();
+        ring.forEach((c,i)=>{const px=P.X(c[0]),py=P.Y(c[1]);i?x.lineTo(px,py):x.moveTo(px,py);});
+        x.closePath();x.fill();x.stroke();}));});
+  }else{loadMexico();x.fillStyle='#3a4a6a';x.font='12px system-ui';
+    x.fillText('Cargando mapa de México…',14,h/2);}
+  if(trail.length){
+    const grad=x.createLinearGradient(0,0,w,0);grad.addColorStop(0,'#22d3ee');grad.addColorStop(1,'#6366f1');
+    x.strokeStyle=grad;x.lineWidth=2.5;x.beginPath();
+    trail.forEach((p,i)=>{const px=P.X(p[1]),py=P.Y(p[0]);i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();
+    const L=trail[trail.length-1],cx=P.X(L[1]),cy=P.Y(L[0]);
+    x.fillStyle='#22d3ee33';x.beginPath();x.arc(cx,cy,10,0,7);x.fill();
+    x.fillStyle='#22d3ee';x.beginPath();x.arc(cx,cy,5,0,7);x.fill();
+  }
+}
+async function pollStatus(){try{const res=await fetch('/api/status');
+  if(res.status===401){onAuthLost();return;}
+  const s=await res.json();
+  MODEL_NAME=s.model||'';renderAllMeta();   // modelo activo -> se muestra en cada cámara
+  $('site2').textContent=s.site||s.device_id||'';
+  $('f_dev').textContent=s.device_id||'—';$('f_site').textContent=s.site||'';
+  $('k_cams').textContent=`${s.cameras_online}/${s.cameras_total}`;
+  $('k_anom').textContent=s.anomalies_active;$('k_anom_card').classList.toggle('alert',s.anomalies_active>0);
+  $('k_events').textContent=s.events_total;
+  $('netdot').classList.toggle('on',!!s.online);$('net').textContent=s.online?'internet':'local';
+  if(s.gps&&s.gps.speed_kmh!=null)$('k_speed').textContent=fmt(s.gps.speed_kmh,0);
+}catch(e){}}
+function connect(){const es=new EventSource('/events');
+  es.onopen=()=>{$('livedot').classList.add('on');$('live').textContent='en vivo';};
+  es.onerror=()=>{$('livedot').classList.remove('on');$('live').textContent='reconectando…';};
+  es.onmessage=e=>{const m=JSON.parse(e.data);
+    if(m.type==='telemetry')onTelemetry(m);else if(m.type==='event')onEvent(m);else if(m.type==='gps')onGps(m);
+    else if(m.type==='stats')onStats(m);
+    else if(m.type==='camera_removed')removeTile(m.camera_id);
+    else if(m.type==='camera_status'){addTile(m.camera_id);const bd=$('bd-'+m.camera_id);
+      if(bd&&m.status!=='en vivo')bd.textContent=m.status;}};}
+/* ───────── Navegación entre páginas ───────── */
+function switchPage(name,scrollTo){
+  document.querySelectorAll('.page').forEach(p=>p.hidden = (p.id!=='page-'+name));
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
+  if(name==='config'){loadConfig();}
+  if(scrollTo){const el=$(scrollTo);if(el)setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),30);}
+}
+document.querySelectorAll('.nav').forEach(n=>n.addEventListener('click',()=>{
+  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));n.classList.add('active');
+  switchPage(n.dataset.page||'dashboard',n.dataset.scroll);
+}));
+
+/* ───────── Configuración ───────── */
+const CFG={vehicle:{},cameras:[],alerts:{sms:[],emails:[],whatsapp:[],telegram:[],
+  include_location_link:true,map_provider:'google',score_threshold:0.55}};
+const LISTS=['sms','emails','whatsapp','telegram'];
+
+let CFG_LOADED=false;   // ¿se cargó bien la config? evita guardar (y borrar) sobre datos no cargados
+async function loadConfig(){
+  CFG_LOADED=false;
+  try{const res=await fetch('/api/config');
+    if(res.status===401){setMsg('Sesión expirada. Vuelve a iniciar sesión.','err');onAuthLost();return;}
+    if(res.status===403){setMsg('Solo el administrador puede ver/editar la configuración.','err');return;}
+    if(!res.ok){setMsg('No se pudo cargar la configuración (error '+res.status+').','err');return;}
+    const d=await res.json();
+    if(d&&d.error){setMsg('No se pudo cargar la configuración: '+d.error,'err');return;}
+    CFG.vehicle=d.vehicle||{};CFG.cameras=d.cameras||[];
+    CFG.alerts=Object.assign(CFG.alerts,d.alerts||{});fillForm();loadUsers();loadModel();
+    loadTestigos();loadVideos();loadGallery();
+    CFG_LOADED=true;
+  }catch(e){setMsg('No se pudo cargar la configuración','err');}
+}
+function fillForm(){
+  $('v_id').value=CFG.vehicle.id||'';$('v_plate').value=CFG.vehicle.plate||'';
+  $('v_site').value=CFG.vehicle.site||'';$('v_driver').value=CFG.vehicle.driver||'';
+  LISTS.forEach(renderChips);renderCams();
+  $('tg_token').value=CFG.alerts.telegram_bot_token||'';
+  $('o_enabled').checked=!!CFG.alerts.enabled;
+  $('o_loc').checked=!!CFG.alerts.include_location_link;
+  $('o_map').value=CFG.alerts.map_provider||'google';
+  $('o_thr').value=CFG.alerts.score_threshold??0.55;
+  setMsg('');
+}
+function renderChips(key){
+  const box=$('chips_'+key);const arr=CFG.alerts[key]||[];
+  if(!arr.length){box.innerHTML='<span class="empty2">Ninguno todavía.</span>';return;}
+  box.innerHTML='';arr.forEach((v,i)=>{const c=document.createElement('span');c.className='chip';
+    c.innerHTML=`<b></b><span class="x">✕</span>`;c.querySelector('b').textContent=v;
+    c.querySelector('.x').onclick=()=>{arr.splice(i,1);renderChips(key);};box.appendChild(c);});
+}
+document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>{
+  const key=b.dataset.add;const inp=$('in_'+(key==='emails'?'email':key));
+  const v=(inp.value||'').trim();if(!v)return;
+  (CFG.alerts[key]=CFG.alerts[key]||[]).push(v);inp.value='';renderChips(key);inp.focus();
+}));
+// Enter en el input también agrega
+LISTS.forEach(key=>{const inp=$('in_'+(key==='emails'?'email':key));
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();
+    document.querySelector(`[data-add="${key}"]`).click();}});});
+
+function renderCams(){
+  const box=$('cam_list');box.innerHTML='';
+  CFG.cameras.forEach((cam,i)=>{
+    const row=document.createElement('div');row.className='camrow';
+    row.innerHTML=`<input type="text" placeholder="cam-front" value="">
+      <input type="text" list="video_urls" placeholder="rtsp://…  ·  /dev/video0  ·  file://mi-video.mp4">
+      <label class="tg"><span class="switch"><input type="checkbox"><span class="sl"></span></span></label>
+      <button class="btn icon sm" title="Quitar">✕</button>`;
+    const[idIn,urlIn]=row.querySelectorAll('input[type=text]');const en=row.querySelector('.switch input');
+    idIn.value=cam.id||'';urlIn.value=cam.url||'';en.checked=cam.enabled!==false;
+    idIn.oninput=()=>cam.id=idIn.value;urlIn.oninput=()=>cam.url=urlIn.value;
+    en.onchange=()=>cam.enabled=en.checked;
+    row.querySelector('button').onclick=()=>{CFG.cameras.splice(i,1);renderCams();};
+    box.appendChild(row);
+  });
+  $('cam_count').textContent=CFG.cameras.length;
+}
+$('cam_add').addEventListener('click',()=>{CFG.cameras.push({id:'',url:'',enabled:true});renderCams();});
+
+/* ───────── Videos subidos (una fuente más, como el RTSP) ───────── */
+const VIDEOS={items:[],max_mb:2048};
+function vidMsg(t,cls){const m=$('vid_msg');m.textContent=t||'';m.className='msg'+(cls?' '+cls:'');}
+function fmtDur(s){if(s==null)return '';s=Math.round(s);const m=Math.floor(s/60);
+  return (m?m+' min ':'')+(s%60)+' s';}
+async function loadVideos(){
+  try{const res=await fetch('/api/videos');if(!res.ok)return;
+    const d=await res.json();VIDEOS.items=d.items||[];VIDEOS.max_mb=d.max_mb||VIDEOS.max_mb;
+    renderVideos();
+  }catch(e){/* la biblioteca no debe romper el panel */}
+}
+function renderVideos(){
+  const box=$('vid_list');box.innerHTML='';
+  $('vid_count').textContent=VIDEOS.items.length;
+  // Sugerencias para el campo URL de cada cámara (sección 2).
+  const dl=$('video_urls');dl.innerHTML='';
+  VIDEOS.items.forEach(v=>{const o=document.createElement('option');o.value=v.url;dl.appendChild(o);});
+  if(!VIDEOS.items.length){
+    box.innerHTML='<span class="empty2">Todavía no has subido ningún vídeo.</span>';return;}
+  VIDEOS.items.forEach(v=>{
+    const row=document.createElement('div');row.className='vidrow';
+    const info=document.createElement('div');
+    const nm=document.createElement('div');nm.className='nm';nm.textContent=v.name;
+    const meta=document.createElement('div');meta.className='meta';
+    meta.textContent=[v.size_mb+' MB',(v.width&&v.height)?v.width+'×'+v.height:'',
+                      v.fps?v.fps+' fps':'',fmtDur(v.duration_s),v.url]
+                     .filter(Boolean).join(' · ');
+    info.append(nm,meta);
+    const acts=document.createElement('div');acts.className='acts';
+    const use=document.createElement('button');use.className='btn primary sm';
+    use.textContent='Usar como cámara';use.onclick=()=>useVideoAsCamera(v);
+    const see=document.createElement('a');see.className='btn sm';see.textContent='Ver';
+    see.href='/video/'+encodeURIComponent(v.name);see.target='_blank';see.rel='noopener';
+    const del=document.createElement('button');del.className='btn icon sm';
+    del.title='Borrar';del.textContent='✕';del.onclick=()=>deleteVideo(v);
+    acts.append(use,see,del);
+    row.append(info,acts);box.appendChild(row);
+  });
+}
+function camIdFor(name){
+  let base=(name.replace(/\.[^.]+$/,'').toLowerCase().replace(/[^a-z0-9]+/g,'-')
+                .replace(/^-+|-+$/g,'')||'video').slice(0,20);
+  let id='vid-'+base,i=2;
+  while(CFG.cameras.some(c=>(c.id||'').trim()===id)){id='vid-'+base+'-'+(i++);}
+  return id;
+}
+function useVideoAsCamera(v){
+  const same=CFG.cameras.find(c=>(c.url||'').trim()===v.url);
+  if(same){same.enabled=true;renderCams();
+    vidMsg('Ese vídeo ya está en la lista de cámaras («'+(same.id||'sin id')+'»); lo dejé activado. '+
+           'Pulsa «Guardar configuración».','ok');return;}
+  const id=camIdFor(v.name);
+  CFG.cameras.push({id:id,url:v.url,enabled:true,loop:true});renderCams();
+  vidMsg('Añadido como cámara «'+id+'» (sección 2). Pulsa «Guardar configuración» para verlo en vivo.','ok');
+}
+async function deleteVideo(v){
+  if(!confirm('¿Borrar «'+v.name+'»? Si alguna cámara lo está usando, se quedará sin señal.'))return;
+  try{
+    const r=await(await fetch('/api/videos/delete',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({name:v.name})})).json();
+    if(r.ok){vidMsg('✓ Vídeo borrado'+((r.in_use&&r.in_use.length)?
+                    ' · lo usaba: '+r.in_use.join(', '):''),'ok');loadVideos();}
+    else vidMsg('No se pudo borrar: '+(r.error||''),'err');
+  }catch(e){vidMsg('No se pudo borrar el vídeo','err');}
+}
+$('vid_upload').addEventListener('click',()=>{
+  const f=($('vid_file').files||[])[0];
+  if(!f){vidMsg('Elige primero un archivo de vídeo.','err');return;}
+  const mb=f.size/1e6;
+  if(mb>VIDEOS.max_mb){vidMsg('El vídeo pesa '+mb.toFixed(0)+' MB y el máximo es '+
+                              VIDEOS.max_mb+' MB.','err');return;}
+  const bar=$('vid_bar'),fill=bar.querySelector('span'),btn=$('vid_upload');
+  bar.hidden=false;fill.style.width='0%';btn.disabled=true;
+  vidMsg('Subiendo «'+f.name+'» ('+mb.toFixed(1)+' MB)…');
+  // XHR (no fetch) para poder mostrar el progreso: en 4G un vídeo tarda.
+  const xhr=new XMLHttpRequest();
+  xhr.open('POST','/api/videos/upload?name='+encodeURIComponent(f.name));
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)
+    fill.style.width=(100*e.loaded/e.total).toFixed(0)+'%';};
+  xhr.onload=()=>{
+    btn.disabled=false;bar.hidden=true;
+    let r={};try{r=JSON.parse(xhr.responseText||'{}');}catch(e){}
+    if(xhr.status===200&&r.ok){
+      vidMsg('✓ «'+r.video.name+'» subido. Pulsa «Usar como cámara» para analizarlo.','ok');
+      $('vid_file').value='';loadVideos();
+    }else vidMsg('No se pudo subir: '+(r.error||('error '+xhr.status)),'err');
+  };
+  xhr.onerror=()=>{btn.disabled=false;bar.hidden=true;
+    vidMsg('Se cortó la subida (revisa la conexión con el nodo).','err');};
+  xhr.send(f);
+});
+
+// Galería de rostros (panel 12). Los botones existen siempre en el DOM; el panel se
+// esconde solo si el modelo activo no tiene galería.
+$('gal_upload').addEventListener('click',subirRostros);
+$('gal_rebuild').addEventListener('click',reconstruirGaleria);
+$('gal_person').addEventListener('keydown',e=>{if(e.key==='Enter')subirRostros();});
+
+// Vista previa del link de ubicación según el proveedor
+function updateLocPreview(){const p=$('o_map').value;
+  const link=p==='osm'?'https://www.openstreetmap.org/?mlat=13.6929&mlon=-89.2182#map=17/13.6929/-89.2182'
+                      :'https://maps.google.com/?q=13.6929,-89.2182';
+  $('loc_preview').innerHTML='Ejemplo de link: <b></b>';$('loc_preview').querySelector('b').textContent=link;}
+$('o_map').addEventListener('change',updateLocPreview);
+
+function setMsg(t,cls){const m=$('cfg_msg');m.textContent=t||'';m.className='msg'+(cls?' '+cls:'');}
+function collect(){
+  return {vehicle:{id:$('v_id').value.trim(),plate:$('v_plate').value.trim(),
+                   site:$('v_site').value.trim(),driver:$('v_driver').value.trim()},
+    // Object.assign conserva los campos que la web no edita (transport, loop):
+    // mapear solo id/url/enabled los borraba en cada guardado.
+    cameras:CFG.cameras.map(c=>Object.assign({},c,{id:(c.id||'').trim(),
+                                                   url:(c.url||'').trim(),
+                                                   enabled:c.enabled!==false}))
+                       .filter(c=>c.id||c.url),
+    alerts:{enabled:$('o_enabled').checked,
+            sms:CFG.alerts.sms||[],emails:CFG.alerts.emails||[],whatsapp:CFG.alerts.whatsapp||[],
+            telegram:CFG.alerts.telegram||[],telegram_bot_token:$('tg_token').value.trim(),
+            include_location_link:$('o_loc').checked,
+            map_provider:$('o_map').value,score_threshold:parseFloat($('o_thr').value)||0.55}};
+}
+async function saveConfig(){
+  // Salvaguarda: si la config no se cargó bien (p. ej. sesión caducada), NO guardar,
+  // porque enviaríamos cameras:[] y borraríamos las cámaras guardadas en disco.
+  if(!CFG_LOADED){setMsg('No se guardó: la configuración no se cargó correctamente. Recarga la página e inicia sesión antes de guardar.','err');return false;}
+  const r=await(await fetch('/api/config',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(collect())})).json();
+  return !!r.ok;
+}
+$('cfg_save').addEventListener('click',async()=>{setMsg('Guardando…');
+  try{
+    const okCfg=await saveConfig();
+    let extra='';
+    // Si el formulario "Crear usuario" tiene datos, lo registra junto con el guardado.
+    if($('nu_user').value.trim()||$('nu_pass').value){
+      extra += (await addUser()) ? ' · usuario creado' : ' · revisa el usuario nuevo';
+    }
+    // Si cambiaste la familia/modelo o los pesos del VAD, guárdalo también.
+    if(modelChanged()){
+      await saveModel(); extra += ' · modelo (reinicia para aplicar)';
+    }
+    if(okCfg){setMsg('✓ Configuración guardada'+extra,'ok');loadThresholds();}
+    else setMsg('Error al guardar','err');
+  }catch(e){setMsg('No se pudo guardar','err');}});
+$('cfg_reload').addEventListener('click',loadConfig);
+$('nu_add').addEventListener('click',addUser);
+$('m_save').addEventListener('click',saveModel);
+$('tg_reload').addEventListener('click',()=>loadTestigos());
+$('tg_cam').addEventListener('change',()=>loadTestigos());
+$('tg_limit').addEventListener('change',()=>loadTestigos());
+$('tg_detect').addEventListener('click',async()=>{const m=$('tg_msg');m.className='msg';m.textContent='Guardando y detectando…';
+  try{await saveConfig();const r=await(await fetch('/api/telegram/detect',{method:'POST'})).json();
+    if(!r.ok){m.className='msg err';m.textContent='Error: '+(r.error||'revisa el token');return;}
+    if(!r.chats||!r.chats.length){m.className='msg err';
+      m.textContent='Sin chats. Escríbele "hola" a tu bot en Telegram y reintenta.';return;}
+    let added=0;r.chats.forEach(c=>{if(!(CFG.alerts.telegram||[]).includes(c.id)){
+      (CFG.alerts.telegram=CFG.alerts.telegram||[]).push(c.id);added++;}});
+    renderChips('telegram');m.className='msg ok';
+    m.textContent='✓ Detectado: '+r.chats.map(c=>c.name?`${c.id} (${c.name})`:c.id).join(', ')+'. Pulsa Guardar.';
+  }catch(e){m.className='msg err';m.textContent='No se pudo detectar';}});
+$('tg_eye').addEventListener('click',()=>{const i=$('tg_token');
+  i.type = i.type==='password' ? 'text' : 'password';
+  $('tg_eye').textContent = i.type==='password' ? '👁' : '🙈';});
+$('tg_test').addEventListener('click',async()=>{const m=$('tg_msg');m.className='msg';m.textContent='Guardando y enviando…';
+  try{await saveConfig();const r=await(await fetch('/api/alert/test',{method:'POST'})).json();
+    if(r.ok){m.className='msg ok';m.textContent='✓ Enviado ('+r.sent+')';}
+    else{m.className='msg err';m.textContent='Error: '+((r.errors&&r.errors.join(', '))||'revisa token/chat id y guarda primero');}
+  }catch(e){m.className='msg err';m.textContent='No se pudo probar';}});
+
+/* ───────── Autenticación / sesión ───────── */
+let ROLE=null, USER=null, APP_STARTED=false, SESSION_OK=true;
+// Sesión perdida (cookie caducada / nodo reiniciado): vuelve al login una sola vez,
+// en vez de dejar el dashboard con cámaras viejas que ya no se pueden gestionar.
+function onAuthLost(){ if(!SESSION_OK)return; SESSION_OK=false; showLogin(); }
+function showApp(){$('login').hidden=true;$('pwmodal').hidden=true;$('app').style.display='grid';}
+function showLogin(){$('app').style.display='none';$('pwmodal').hidden=true;$('login').hidden=false;$('lg_user').focus();}
+function showPwModal(){$('login').hidden=true;$('app').style.display='none';$('pwmodal').hidden=false;$('pw_new').focus();}
+function applyRole(){
+  $('t_user').textContent=USER||'';$('f_user').textContent=USER||'';
+  $('t_role').textContent=ROLE==='admin'?'admin':'usuario';
+  $('nav-config').style.display=ROLE==='admin'?'':'none';
+  document.body.classList.toggle('is-admin',ROLE==='admin');  // muestra el control de umbral en los tiles
+  if(ROLE==='admin')loadZones();  // ¿el modelo activo edita corredor? -> botón «✎ Zonas»
+}
+function initApp(){
+  loadCameras();setInterval(loadCameras,4000);pollStatus();setInterval(pollStatus,2000);connect();
+  loadThresholds();setInterval(loadThresholds,15000);
+  loadRotations();setInterval(loadRotations,15000);
+  loadCounts();setInterval(loadCounts,1500);
+  loadFaces();setInterval(loadFaces,1000);   // escena de rostros/personas del grid
+  loadMexico();drawMap();
+  window.addEventListener('resize',drawMap);
+}
+function enter(){SESSION_OK=true;showApp();applyRole();if(!APP_STARTED){APP_STARTED=true;initApp();}}
+async function checkAuth(){
+  try{const me=await(await fetch('/api/me')).json();
+    if(me.authenticated){USER=me.username;ROLE=me.role;
+      if(me.must_change)showPwModal();else enter();
+    }else showLogin();
+  }catch(e){showLogin();}
+}
+$('login_form').addEventListener('submit',async e=>{e.preventDefault();
+  const m=$('lg_msg');m.className='msg';m.textContent='Entrando…';
+  try{const r=await(await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:$('lg_user').value.trim(),password:$('lg_pass').value})})).json();
+    if(r.ok){USER=r.username;ROLE=r.role;$('lg_pass').value='';m.textContent='';
+      if(r.must_change)showPwModal();else enter();
+    }else{m.className='msg err';m.textContent=r.error||'No se pudo entrar';}
+  }catch(e){m.className='msg err';m.textContent='Error de conexión';}});
+$('pw_form').addEventListener('submit',async e=>{e.preventDefault();
+  const m=$('pw_msg');m.className='msg';const a=$('pw_new').value,b=$('pw_new2').value;
+  if(a.length<4){m.className='msg err';m.textContent='Mínimo 4 caracteres';return;}
+  if(a!==b){m.className='msg err';m.textContent='Las contraseñas no coinciden';return;}
+  m.textContent='Guardando…';
+  try{const r=await(await fetch('/api/password',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({password:a})})).json();
+    if(r.ok){$('pw_new').value=$('pw_new2').value='';enter();}
+    else{m.className='msg err';m.textContent=r.error||'No se pudo cambiar';}
+  }catch(e){m.className='msg err';m.textContent='Error';}});
+async function doLogout(){try{await fetch('/api/logout',{method:'POST'});}catch(e){}location.reload();}
+$('f_logout').addEventListener('click',doLogout);
+$('t_logout').addEventListener('click',doLogout);
+
+/* ───────── Usuarios (admin) ───────── */
+async function loadUsers(){const box=$('users_list');if(!box)return;
+  try{const us=await(await fetch('/api/users')).json();
+    if(!Array.isArray(us)){box.innerHTML='';return;}
+    box.innerHTML='';us.forEach(u=>{
+      const row=document.createElement('div');row.className='camrow';
+      const tag=u.is_default?' <span style="color:var(--warn)">(por defecto)</span>':'';
+      row.innerHTML=`<div class="tg"><b>${u.username}</b> <span class="role">${u.role==='admin'?'admin':'usuario'}</span>${tag}</div>
+        <input type="password" placeholder="nueva contraseña">
+        <button class="btn sm">Cambiar</button>
+        <button class="btn sm" title="Borrar usuario" ${u.username===USER?'disabled':''}>🗑</button>`;
+      const inp=row.querySelector('input'),[btn,del]=row.querySelectorAll('button');
+      btn.onclick=async()=>{const pw=inp.value;if(pw.length<4){alert('Mínimo 4 caracteres');return;}
+        btn.textContent='…';
+        try{const r=await(await fetch('/api/password',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({username:u.username,password:pw})})).json();
+          inp.value='';btn.textContent=r.ok?'✓':'Cambiar';
+          if(r.ok)setTimeout(loadUsers,1200);}catch(e){btn.textContent='Cambiar';}};
+      del.onclick=async()=>{if(!confirm(`¿Borrar la cuenta "${u.username}"?`))return;
+        del.textContent='…';
+        try{const r=await(await fetch('/api/users/delete',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({username:u.username})})).json();
+          if(r.ok)loadUsers();else{alert(r.error||'no se pudo borrar');del.textContent='🗑';}
+        }catch(e){del.textContent='🗑';}};
+      box.appendChild(row);});
+  }catch(e){}}
+/* ───────── Modelo (admin) ───────── */
+function fillSel(sel,opts,cur){sel.innerHTML='';opts.forEach(o=>{
+  const op=document.createElement('option');op.value=o;op.textContent=o;
+  if(o===cur)op.selected=true;sel.appendChild(op);});}
+let MODEL_LOADED={det:null,cls:null,switchable:false,active:null};
+/* Renderiza una lista de modelos como radios. active={family,key}. */
+function renderModelList(box,specs,active){
+  box.innerHTML='';
+  (specs||[]).forEach(s=>{
+    const lab=document.createElement('label');
+    lab.style.cssText='display:flex;gap:8px;align-items:flex-start;padding:7px 9px;'
+      +'border:1px solid var(--line,#2a2f3a);border-radius:8px;margin:5px 0;cursor:pointer;'
+      +(s.available?'':'opacity:.55;cursor:not-allowed;');
+    const r=document.createElement('input');
+    r.type='radio';r.name='modelsel';r.dataset.family=s.family;r.dataset.key=s.key;
+    // Seleccionable aunque no esté disponible aquí (para pre-configurar el target).
+    if(active&&active.family===s.family&&active.key===s.key)r.checked=true;
+    r.addEventListener('change',onModelSel);
+    const meta=document.createElement('div');
+    const warn=s.available?'':` — <span style="color:#e0a030">⚠ no disponible aquí (${s.unavailable_reason||'faltan deps'})</span>`;
+    meta.innerHTML=`<b>${s.label}</b> <small style="opacity:.7">[${s.kind}]</small><br>`
+      +`<span class="hint">${s.detail||''}${warn}</span>`;
+    lab.appendChild(r);lab.appendChild(meta);box.appendChild(lab);
+  });
+}
+function selectedModel(){
+  const r=document.querySelector('input[name="modelsel"]:checked');
+  return r?{family:r.dataset.family,key:r.dataset.key}:null;
+}
+/* Muestra los selects de pesos solo cuando el modelo elegido es el VAD torch. */
+function onModelSel(){
+  const sel=selectedModel();
+  const isVadTorch=sel&&sel.family==='vad'&&sel.key==='vad'&&MODEL_LOADED.switchable;
+  $('m_weights').style.display=isVadTorch?'':'none';
+}
+async function loadModel(){
+  try{const m=await(await fetch('/api/model')).json();if(!m)return;
+    applyZoneCap(m.zones);   // el catálogo trae la capacidad de zonas del modelo vivo
+    MODEL_LOADED={det:m.detector,cls:m.classifier,switchable:!!m.switchable,active:m.active||null};
+    $('m_active').textContent=m.active_label||(m.active?`${m.active.family} · ${m.active.key}`:'—');
+    $('m_running').textContent=m.running||'—';
+    showRestartWarn(m);
+    $('m_backend').textContent=m.backend||'—';$('m_name').textContent=m.name||'—';
+    $('m_device').textContent=m.device||'—';
+    fillSel($('m_det'),m.available_detectors||[],m.detector);
+    fillSel($('m_cls'),m.available_classifiers||[],m.classifier);
+    const off=!m.switchable;$('m_det').disabled=off;$('m_cls').disabled=off;
+    const fams=m.families||{vad:[],heuristic:[]};
+    renderModelList($('m_vad_list'),fams.vad,m.active);
+    renderModelList($('m_heur_list'),fams.heuristic,m.active);
+    $('m_heur_empty').style.display=(fams.heuristic&&fams.heuristic.length)?'none':'';
+    onModelSel();
+  }catch(e){}}
+/* El modelo se elige AL ARRANCAR: si lo guardado no es lo que corre, decirlo aquí y
+   no en un mensajito que se va con el siguiente clic. */
+function showRestartWarn(m){
+  const box=$('m_warn');
+  if(!m.restart_pending){box.hidden=true;box.innerHTML='';return;}
+  const running=m.running||'—', saved=m.active_label||'—';
+  const mock=/^mock/i.test(running);
+  box.innerHTML=mock
+    ? `<b>⚠ El nodo está corriendo en modo simulado</b> («${running}»), así que el
+       modelo que elijas aquí no se usa. Se arrancó con la bandera <code>--mock</code>:
+       relánzalo <b>sin</b> ella para que cargue «${saved}».`
+    : `<b>⚠ Guardado, pero todavía no aplicado.</b> Corriendo ahora:
+       «${running}» · guardado: «${saved}». El modelo se carga al arrancar, así que
+       hay que <b>reiniciar el nodo</b>:
+       <code>uv run python -m edge.main --config config.yaml --force</code>`;
+  box.hidden=false;
+}
+async function saveModel(){const m=$('m_msg');m.className='msg';m.textContent='Guardando…';
+  const sel=selectedModel();
+  const body={};
+  if(sel){body.family=sel.family;body.key=sel.key;}
+  // Pesos del VAD torch solo si ese es el modelo elegido y son intercambiables.
+  if(sel&&sel.family==='vad'&&sel.key==='vad'&&MODEL_LOADED.switchable){
+    body.detector=$('m_det').value;body.classifier=$('m_cls').value;}
+  try{const r=await(await fetch('/api/model',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)})).json();
+    if(r.ok){m.className=r.warning?'msg':'msg ok';
+      m.textContent=(r.warning?('⚠ '+r.warning+' '):'')+'Guardado — reinicia el nodo para aplicar';
+      loadModel();}
+    else{m.className='msg err';m.textContent=r.error||'no se pudo guardar';}
+  }catch(e){m.className='msg err';m.textContent='error';}}
+/* ¿Cambió la selección de modelo respecto a lo cargado? (para el guardado unificado) */
+function modelChanged(){
+  const sel=selectedModel();const a=MODEL_LOADED.active;
+  if(sel&&a&&(sel.family!==a.family||sel.key!==a.key))return true;
+  if(MODEL_LOADED.switchable&&sel&&sel.family==='vad'&&sel.key==='vad'&&
+     ($('m_det').value!==MODEL_LOADED.det||$('m_cls').value!==MODEL_LOADED.cls))return true;
+  return false;
+}
+/* ── Testigos ──────────────────────────────────────────────────────────────
+   Galería de la evidencia que el contador guarda por cada cruce. El panel entero
+   se oculta si el modelo activo no guarda testigos (el VAD, p. ej.), en vez de
+   enseñar una sección vacía que parezca rota. */
+function tgEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>(
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function renderTestigos(d){
+  const grid=$('tg_grid'),cam=encodeURIComponent(d.camera||'');
+  const items=d.items||[];
+  $('tg_count').textContent=items.length;
+  if(!items.length){
+    grid.innerHTML='<div class="hint" style="grid-column:1/-1">Todavía no hay cruces '+
+      'registrados en esta cámara. Aparecerán aquí en cuanto alguien pase por el corredor.</div>';
+    return;
+  }
+  grid.innerHTML=items.map(it=>{
+    const f=it.fotos||{};
+    const thumb=f.crop||f.rostro||f.foto;   // el recorte es lo que se quiere ver
+    const url=n=>'/testigo/'+cam+'/'+encodeURIComponent(n);
+    const esEntrada=(it.evento||'')==='ENTRADA';
+    const shot=thumb
+      ? '<a class="tg-shot" href="'+url(f.foto||thumb)+'" target="_blank" rel="noopener">'+
+        '<img loading="lazy" src="'+url(thumb)+'" alt="'+tgEsc(it.evento)+' '+tgEsc(it.timestamp)+'"></a>'
+      : '<span class="tg-shot"><span class="tg-none">sin foto</span></span>';
+    const links=[];
+    if(f.foto) links.push('<a href="'+url(f.foto)+'" target="_blank" rel="noopener">fotograma</a>');
+    if(f.rostro) links.push('<a href="'+url(f.rostro)+'" target="_blank" rel="noopener">rostro</a>');
+    const hora=(it.timestamp||'').slice(11)||'—', dia=(it.timestamp||'').slice(0,10);
+    return '<div class="tg-card">'+shot+
+      '<div class="tg-meta">'+
+        '<span class="tg-ev '+(esEntrada?'in':'out')+'">'+(esEntrada?'▲ ENTRADA':'▼ SALIDA')+'</span>'+
+        '<span class="tg-when">'+tgEsc(hora)+'</span>'+
+        '<span class="tg-sub">'+tgEsc(dia)+' · id '+tgEsc(it.track_id)+'</span>'+
+        '<span class="tg-sub">'+tgEsc(it.regla)+' '+tgEsc(it.lineas)+' · dentro '+tgEsc(it.dentro)+'</span>'+
+        (it.rostro_nombre?'<span class="tg-sub">'+tgEsc(it.rostro_nombre)+'</span>':'')+
+      '</div>'+
+      (links.length?'<div class="tg-links">'+links.join('')+'</div>':'')+
+    '</div>';
+  }).join('');
+}
+
+async function loadTestigos(camera){
+  const panel=$('tg_panel'),msg=$('tg_gmsg');
+  if(!panel)return;
+  msg.className='msg';msg.textContent='Cargando…';
+  try{
+    const cam=camera!==undefined?camera:($('tg_cam').value||'');
+    const lim=$('tg_limit').value||'60';
+    const r=await fetch('/api/testigos?camera='+encodeURIComponent(cam)+'&limit='+lim);
+    // 403 (no es admin) o modelo sin testigos: el panel no existe para ese caso.
+    // Sin esto, un usuario normal vería la sección vacía y parecería un fallo.
+    if(!r.ok&&r.status!==500){panel.hidden=true;return;}
+    const d=await r.json();
+    if(!d||d.supported===false){panel.hidden=true;return;}
+    panel.hidden=false;
+    const sel=$('tg_cam'),cams=d.cameras||[];
+    sel.innerHTML=cams.map(c=>'<option value="'+tgEsc(c)+'"'+(c===d.camera?' selected':'')+'>'+tgEsc(c)+'</option>').join('')
+                  ||'<option value="">(sin cámaras)</option>';
+    renderTestigos(d);
+    msg.textContent=d.error?('⚠ '+d.error):'';
+    if(d.error)msg.className='msg err';
+  }catch(e){msg.className='msg err';msg.textContent='no se pudo cargar';}
+}
+
+/* ───────── Galería de rostros (solo admin) ─────────
+   Es el panel que faltaba: sin él no había forma de saber a quién puede reconocer el
+   nodo, ni de registrar gente sin copiar carpetas por SSH. */
+const GAL={personas:[],cache:null,max_mb:12};
+function galMsg(t,cls){const m=$('gal_msg');if(!m)return;
+  m.className='msg'+(cls?' '+cls:'');m.textContent=t||'';}
+function galEsc(t){return String(t==null?'':t).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function loadGallery(){
+  const panel=$('gal_panel');if(!panel)return;
+  try{
+    const r=await fetch('/api/faces/gallery');
+    // 403 (no admin) o modelo sin galería: la sección no aplica y se esconde, en vez
+    // de quedarse vacía y parecer que falla.
+    if(!r.ok&&r.status!==500){panel.hidden=true;return;}
+    const d=await r.json();
+    if(!d||d.supported===false){panel.hidden=true;return;}
+    panel.hidden=false;
+    GAL.personas=d.personas||[];GAL.cache=d.cache||null;GAL.max_mb=d.max_mb||12;
+    $('gal_count').textContent=(d.n_personas||0)+' pers · '+(d.n_fotos||0)+' fotos';
+    renderGallery(d);
+  }catch(e){}
+}
+function renderGallery(d){
+  const grid=$('gal_grid'),warn=$('gal_warn');
+  const cache=d.cache||{};
+  /* Aviso explícito de «lo que hay en disco no es lo que el modelo tiene cargado»:
+     copiar fotos y no reconstruir es la confusión que hace pensar que no reconoce. */
+  if(cache.personas!=null&&!d.al_dia){
+    warn.hidden=false;
+    warn.innerHTML='⚠ En disco hay <b>'+(d.n_personas||0)+'</b> persona(s), pero el '
+      +'modelo tiene cargadas <b>'+(cache.personas||0)+'</b> ('+(cache.rostros||0)
+      +' rostros). Pulsa <b>Reconstruir galería</b> para que el cambio afecte al '
+      +'reconocimiento.';
+  }else warn.hidden=true;
+  if(!GAL.personas.length){
+    grid.innerHTML='<div class="hint">Todavía no hay nadie registrado: escribe un nombre, '
+      +'elige 2-4 fotos de frente y pulsa «Añadir fotos».</div>';
+    return;
+  }
+  grid.innerHTML=GAL.personas.map(p=>{
+    const shots=(p.fotos||[]).map(f=>{
+      const u='/rostro/'+encodeURIComponent(p.nombre)+'/'+encodeURIComponent(f);
+      return '<div class="gal-shot"><img src="'+u+'" alt="'+galEsc(f)+'" title="'+galEsc(f)+'">'
+        +'<button type="button" title="Borrar esta foto" data-per="'+galEsc(p.nombre)
+        +'" data-foto="'+galEsc(f)+'">×</button></div>';}).join('');
+    return '<div class="gal-card"><div class="gh"><b>'+galEsc(p.nombre)+'</b>'
+      +'<span class="n">'+(p.n_fotos||0)+' foto(s)</span>'
+      +'<button class="btn sm del" type="button" data-delper="'+galEsc(p.nombre)
+      +'">Borrar persona</button></div>'
+      +'<div class="gal-shots">'+(shots||'<span class="hint">sin fotos</span>')+'</div></div>';
+  }).join('');
+  grid.querySelectorAll('.gal-shot button').forEach(b=>b.addEventListener('click',
+    ()=>delRostro(b.dataset.per,b.dataset.foto)));
+  grid.querySelectorAll('button[data-delper]').forEach(b=>b.addEventListener('click',
+    ()=>delRostro(b.dataset.delper,'')));
+}
+async function delRostro(persona,foto){
+  const q=foto?('la foto «'+foto+'» de '+persona):('a '+persona+' y TODAS sus fotos');
+  if(!confirm('¿Borrar '+q+'?'))return;
+  galMsg('Borrando…');
+  try{
+    const r=await(await fetch('/api/faces/delete',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({persona:persona,foto:foto})})).json();
+    if(r.ok){galMsg('✓ borrado. Reconstruye la galería para aplicarlo.','ok');loadGallery();}
+    else galMsg('No se pudo borrar: '+(r.error||'error'),'err');
+  }catch(e){galMsg('No se pudo borrar (¿se cayó la conexión?).','err');}
+}
+/* Las fotos se suben de una en una, en serie: son pocas y pequeñas, y así un fallo
+   dice EXACTAMENTE en qué archivo fue en vez de dejar la subida a medias sin saberlo. */
+async function subirRostros(){
+  const persona=($('gal_person').value||'').trim();
+  const files=Array.from($('gal_files').files||[]);
+  if(!persona){galMsg('Escribe el nombre de la persona.','err');return;}
+  if(!files.length){galMsg('Elige al menos una foto.','err');return;}
+  const btn=$('gal_upload');btn.disabled=true;
+  let ok=0;
+  for(let i=0;i<files.length;i++){
+    const f=files[i];
+    galMsg('Subiendo '+(i+1)+'/'+files.length+': «'+f.name+'»…');
+    if(f.size>GAL.max_mb*1024*1024){
+      galMsg('«'+f.name+'» pesa '+(f.size/1e6).toFixed(1)+' MB y el máximo es '
+             +GAL.max_mb+' MB.','err');break;}
+    try{
+      const r=await(await fetch('/api/faces/photo?person='+encodeURIComponent(persona)
+        +'&name='+encodeURIComponent(f.name),{method:'POST',body:f})).json();
+      if(!r.ok){galMsg('«'+f.name+'»: '+(r.error||'no se pudo subir'),'err');break;}
+      ok++;
+    }catch(e){galMsg('Se cortó la subida en «'+f.name+'».','err');break;}
+  }
+  btn.disabled=false;
+  if(ok)galMsg('✓ '+ok+' foto(s) de '+persona+' subidas. Ahora pulsa «Reconstruir '
+               +'galería» para que el modelo las use.','ok');
+  $('gal_files').value='';
+  loadGallery();
+}
+async function reconstruirGaleria(){
+  const btn=$('gal_rebuild');btn.disabled=true;
+  galMsg('Reconstruyendo (extrae los rasgos de cada foto; tarda unos segundos)…');
+  try{
+    const r=await(await fetch('/api/faces/rebuild',{method:'POST'})).json();
+    if(r.ok)galMsg('✓ Galería reconstruida: '+(r.n_persons||0)+' persona(s), '
+                   +(r.n_faces||0)+' rostro(s). Ya está en uso, sin reiniciar.','ok');
+    else galMsg('No se pudo reconstruir: '+(r.error||'error'),'err');
+  }catch(e){galMsg('No se pudo reconstruir (¿se cayó la conexión?).','err');}
+  btn.disabled=false;loadGallery();
+}
+
+async function addUser(){const m=$('nu_msg');m.className='msg';m.textContent='';
+  const u=$('nu_user').value.trim(),p=$('nu_pass').value,role=$('nu_role').value;
+  if(!u){m.className='msg err';m.textContent='Falta el nombre';return false;}
+  if(p.length<4){m.className='msg err';m.textContent='Contraseña mínimo 4 caracteres';return false;}
+  try{const r=await(await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:u,password:p,role})})).json();
+    if(r.ok){m.className='msg ok';m.textContent='Usuario creado';
+      $('nu_user').value='';$('nu_pass').value='';loadUsers();return true;}
+    m.className='msg err';m.textContent=r.error||'no se pudo crear';return false;
+  }catch(e){m.className='msg err';m.textContent='error';return false;}}
+
+/* ───────── Editor de corredor (Contador de flujo) ─────────
+   Corredor = box de 4 puntos en PÍXELES del frame que procesa el modelo. El
+   snapshot se dibuja a su resolución nativa en el canvas; el navegador lo escala
+   con CSS y los clics se remapean a px nativos, así el box coincide con lo que ve
+   el detector. Los 2 primeros puntos definen el lado AFUERA (eje AFUERA→ADENTRO). */
+const ZONES={enabled:false,schema:null};
+let zEd=null;  // {cam,img,W,H,pts:[]}
+function applyZoneCap(z){
+  ZONES.enabled=!!(z&&z.enabled);ZONES.schema=(z&&z.schema)||null;
+  document.body.classList.toggle('has-zones',ZONES.enabled);
+}
+async function loadZones(){try{
+  const m=await(await fetch('/api/model')).json();
+  if(m&&('zones'in m))applyZoneCap(m.zones);
+}catch(e){}}
+function zMsg(t,cls){const m=$('z_msg');if(!m)return;m.className='zmsg'+(cls?(' '+cls):'');m.textContent=t||'';}
+async function openZoneEditor(id){
+  if(!ZONES.enabled)return;
+  zEd={cam:id,img:null,W:640,H:400,pts:[]};
+  $('z_cam').textContent=id;zMsg('');
+  const sc=ZONES.schema||{};if(sc.help)$('z_help').textContent=sc.help;
+  $('zonemodal').hidden=false;
+  // 1) opciones + corredor guardado
+  try{const d=await(await fetch('/api/zones?camera='+encodeURIComponent(id))).json();
+    if(d&&d.supported!==false){
+      $('z_nlines').value=d.n_lines||5;$('z_nlines_v').textContent=d.n_lines||5;
+      $('z_invert').checked=!!d.invert;$('z_axisrot').checked=!!d.axis_rot;
+      if(d.regions&&d.regions[0]&&d.regions[0].length===4)
+        zEd.pts=d.regions[0].map(p=>[p[0],p[1]]);
+    }
+  }catch(e){}
+  // 2) snapshot de fondo (resolución nativa = la que procesa el modelo)
+  const img=new Image();
+  img.onload=()=>{zEd.img=img;zEd.W=img.naturalWidth||640;zEd.H=img.naturalHeight||400;
+    const cv=$('z_canvas');cv.width=zEd.W;cv.height=zEd.H;zDraw();};
+  img.onerror=()=>{zMsg('Sin imagen de esta cámara todavía (¿está en vivo?).','err');zDraw();};
+  img.src='/snapshot/'+encodeURIComponent(id)+'?t='+Date.now();
+  zDraw();
+}
+function closeZoneEditor(){$('zonemodal').hidden=true;zEd=null;}
+function zCanvasXY(ev){
+  const cv=$('z_canvas'),r=cv.getBoundingClientRect();
+  const cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left;
+  const cy=(ev.touches?ev.touches[0].clientY:ev.clientY)-r.top;
+  return [Math.round(cx*cv.width/r.width),Math.round(cy*cv.height/r.height)];
+}
+function zDraw(){
+  const cv=$('z_canvas');if(!cv)return;const g=cv.getContext('2d');
+  g.clearRect(0,0,cv.width,cv.height);
+  if(zEd&&zEd.img)g.drawImage(zEd.img,0,0,cv.width,cv.height);
+  else{g.fillStyle='#05070d';g.fillRect(0,0,cv.width,cv.height);}
+  const pts=zEd?zEd.pts:[];
+  // polígono
+  if(pts.length){
+    g.lineWidth=Math.max(2,cv.width/320);g.strokeStyle='#38bdf8';
+    g.fillStyle='rgba(56,189,248,.14)';g.beginPath();
+    g.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)g.lineTo(pts[i][0],pts[i][1]);
+    if(pts.length===4)g.closePath();g.stroke();if(pts.length>=3)g.fill();
+    // lado AFUERA (puntos 1-2) resaltado
+    if(pts.length>=2){g.strokeStyle='#f59e0b';g.lineWidth=Math.max(3,cv.width/240);
+      g.beginPath();g.moveTo(pts[0][0],pts[0][1]);g.lineTo(pts[1][0],pts[1][1]);g.stroke();}
+    // eje AFUERA→ADENTRO (según axis_rot / invert), si el box está completo
+    if(pts.length===4)zDrawAxis(g,cv,pts);
+    // vértices numerados
+    const r=Math.max(4,cv.width/140);
+    pts.forEach((p,i)=>{g.fillStyle=i<2?'#f59e0b':'#38bdf8';g.beginPath();
+      g.arc(p[0],p[1],r,0,7);g.fill();g.fillStyle='#04121f';
+      g.font='bold '+Math.round(r*1.5)+'px system-ui';g.textAlign='center';g.textBaseline='middle';
+      g.fillText(String(i+1),p[0],p[1]);});
+  }
+  $('z_msg').classList.contains('err')||zMsg(pts.length<4
+    ?('Puntos: '+pts.length+'/4 — clic para añadir')
+    :'Box completo. Ajusta opciones y guarda.', pts.length===4?'ok':'');
+}
+function zDrawAxis(g,cv,p){
+  const rot=$('z_axisrot').checked,inv=$('z_invert').checked;
+  let o=rot?mid(p[1],p[2]):mid(p[0],p[1]);
+  let e=rot?mid(p[3],p[0]):mid(p[2],p[3]);
+  if(inv){const t=o;o=e;e=t;}
+  g.strokeStyle='#22c55e';g.fillStyle='#22c55e';g.lineWidth=Math.max(2,cv.width/300);
+  g.beginPath();g.moveTo(o[0],o[1]);g.lineTo(e[0],e[1]);g.stroke();
+  const a=Math.atan2(e[1]-o[1],e[0]-o[0]),h=Math.max(8,cv.width/60);
+  g.beginPath();g.moveTo(e[0],e[1]);
+  g.lineTo(e[0]-h*Math.cos(a-.4),e[1]-h*Math.sin(a-.4));
+  g.lineTo(e[0]-h*Math.cos(a+.4),e[1]-h*Math.sin(a+.4));g.closePath();g.fill();
+  g.font='bold '+Math.max(11,Math.round(cv.width/45))+'px system-ui';g.textAlign='center';
+  g.fillStyle='#fbbf24';g.fillText('AFUERA',o[0],o[1]-h*.6);
+  g.fillStyle='#4ade80';g.fillText('ADENTRO',e[0],e[1]-h*.6);
+}
+function mid(a,b){return [(a[0]+b[0])/2,(a[1]+b[1])/2];}
+async function saveZones(){
+  if(!zEd)return;
+  if(zEd.pts.length!==4){zMsg('Dibuja los 4 puntos del box antes de guardar.','err');return;}
+  zMsg('Guardando…');
+  const body={camera_id:zEd.cam,regions:[zEd.pts],
+    n_lines:parseInt($('z_nlines').value,10)||5,
+    invert:$('z_invert').checked,axis_rot:$('z_axisrot').checked};
+  try{const r=await(await fetch('/api/zones',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+    if(r.ok){zMsg(r.applied_live?'Guardado y aplicado en vivo ✓':'Guardado ✓ (se aplicará al arrancar la cámara)','ok');
+      setTimeout(closeZoneEditor,900);}
+    else zMsg(r.error||'no se pudo guardar','err');
+  }catch(e){zMsg('error de red','err');}
+}
+(function wireZoneEditor(){
+  const cv=$('z_canvas');if(!cv)return;
+  const add=ev=>{ev.preventDefault();if(!zEd)return;
+    if(zEd.pts.length>=4)return;zEd.pts.push(zCanvasXY(ev));zDraw();};
+  cv.addEventListener('click',add);
+  cv.addEventListener('touchstart',add,{passive:false});
+  $('z_nlines').addEventListener('input',e=>{$('z_nlines_v').textContent=e.target.value;zDraw();});
+  $('z_invert').addEventListener('change',zDraw);
+  $('z_axisrot').addEventListener('change',zDraw);
+  $('z_clear').addEventListener('click',()=>{if(zEd){zEd.pts=[];zMsg('');zDraw();}});
+  $('z_cancel').addEventListener('click',closeZoneEditor);
+  $('z_save').addEventListener('click',saveZones);
+})();
+
+checkAuth();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+</script>
+</body>
+</html>

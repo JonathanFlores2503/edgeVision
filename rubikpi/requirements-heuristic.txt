@@ -1,0 +1,40 @@
+# Edge — dependencias de los modelos HEURÍSTICOS (carpeta heuristicModels/).
+#
+# Solo necesario si seleccionas un modelo de la familia "Heuristic Models" desde
+# el panel de admin (p. ej. el Fight Detector: YOLO + CLIP). Instala primero
+# requirements.txt.
+#
+# IMPORTANTE — torch/torchvision dependen de la PLATAFORMA, NO los instales
+# ciegamente con pip (igual que en requirements-model.txt):
+#   * Jetson (aarch64 + CUDA): vienen en la imagen NVIDIA L4T. NO los reinstales.
+#   * PC con GPU/CPU: usa el comando de https://pytorch.org/get-started/locally/
+#
+# Tras tener torch/torchvision en el entorno:
+#     pip install -r requirements-heuristic.txt
+#
+# El Fight Detector descarga en el primer uso (modelos configurables en su META):
+#   * yolo11n.pt              (nano: rápido en CPU; ultralytics lo baja solo)
+#   * pesos de CLIP ViT-B/32  (clip los baja solo; ViT-B es más rápido que ViT-L)
+
+ultralytics>=8.3               # YOLO11 (detección/seguimiento de personas)
+
+# CLIP con la API de OpenAI (clip.load / clip.tokenize). El paquete oficial solo
+# está en git; usamos el mirror de PyPI `clip-anytorch`, que expone el módulo
+# `clip` idéntico. (Alternativa: pip install git+https://github.com/openai/CLIP.git)
+clip-anytorch>=2.6
+
+# clip-anytorch usa `from pkg_resources import packaging`, alias que setuptools
+# eliminó en la 70. Fijar <70 evita el ImportError.
+setuptools<70
+
+ftfy                           # dependencia de CLIP
+regex                          # dependencia de CLIP
+
+# OpenCV: en equipos headless usa opencv-python-headless (evita el error
+# `libGL.so.1`). ultralytics arrastra opencv-python (con GUI); si te pasa,
+# desinstálalo y deja solo el headless:
+#     pip uninstall -y opencv-python opencv-python-headless
+#     pip install opencv-python-headless
+opencv-python-headless
+
+# torch y torchvision: ver nota de plataforma arriba (no se listan a propósito).

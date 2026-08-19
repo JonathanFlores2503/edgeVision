@@ -1,0 +1,15 @@
+# ByteTrack afinado para CONTEO DE PERSONAS en puerta (PeopleCounter_Web.py)
+#
+# vs el bytetrack.yaml default de ultralytics:
+#   - track_buffer 90 (default 30): mantiene "vivo" un track ocluido ~6s a
+#     15fps → tras la oclusion se RE-ASOCIA el mismo id en vez de crear uno
+#     nuevo (clave para no perder cruces ni duplicar personas en multitud).
+#   - new_track_thresh 0.6 (default 0.25): mas dificil que nazca un id nuevo
+#     por una deteccion dudosa (menos ids fantasma sobre la linea).
+tracker_type: bytetrack
+track_high_thresh: 0.5
+track_low_thresh: 0.1
+new_track_thresh: 0.6
+track_buffer: 90
+match_thresh: 0.8
+fuse_score: True

@@ -1,0 +1,11 @@
+# El entorno de uv NO va a la imagen: se construye dentro (rutas absolutas del
+# host + binarios que no corresponden al intérprete de la base de NVIDIA).
+.venv/
+__pycache__/
+*.py[cod]
+
+# Datos y secretos por dispositivo
+config.yaml
+data/
+*.db
+*.mp4

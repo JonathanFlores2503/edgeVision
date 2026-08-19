@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ContadorFlujo — Conteo de entradas/salidas (documentación)</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --txt:#d7dae0;
+    --muted:#8b93a3; --acc:#4da3ff; --ok:#3ddc84; --warn:#ffb454; --bad:#ff5c5c;
+    --border:#2a2f3a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);line-height:1.55}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:1.8rem;margin:.2em 0 .1em}
+  h2{font-size:1.35rem;margin-top:2.2em;padding-bottom:.3em;border-bottom:2px solid var(--border);color:var(--acc)}
+  h3{font-size:1.05rem;margin-top:1.5em}
+  p.sub{color:var(--muted);margin-top:0}
+  code{background:var(--panel2);padding:2px 6px;border-radius:4px;font-size:.9em}
+  pre{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:.85rem}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:1em 0;font-size:.92rem}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel2)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin:18px 0}
+  .tag{display:inline-block;background:var(--panel2);border:1px solid var(--border);border-radius:20px;padding:2px 12px;font-size:.8rem;margin-right:6px;color:var(--acc)}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+  .note{border-left:4px solid var(--warn);background:var(--panel2);padding:10px 14px;border-radius:0 8px 8px 0;margin:1em 0;font-size:.92rem}
+  .toc a{color:var(--acc);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  ul{padding-left:1.3em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>ContadorFlujo — Conteo de ENTRADAS / SALIDAS</h1>
+<p class="sub"><code>PeopleCounter_Web.py</code> (V1) · <code>PeopleCounter_V2_Web.py</code> (V2) · Familia <strong>ContadorFlujo</strong> · Framework <code>Models/Base/</code></p>
+<span class="tag">YOLO + ByteTrack</span><span class="tag">Conteo persistente</span><span class="tag">Evidencia por evento</span><span class="tag">Guardián de luz (V2)</span>
+
+<div class="card toc">
+  <strong>Índice</strong>
+  <ol>
+    <li><a href="#que">Qué hacen (y qué no)</a></li>
+    <li><a href="#v1">V1 — línea de cruce</a></li>
+    <li><a href="#v2">V2 — corredor con escalera (recomendado)</a></li>
+    <li><a href="#persistencia">Conteo persistente y "Fijar N dentro"</a></li>
+    <li><a href="#uso">Uso (comandos)</a></li>
+    <li><a href="#flags">Flags</a></li>
+    <li><a href="#limites">Limitaciones</a></li>
+  </ol>
+</div>
+
+<h2 id="que">1 · Qué hacen (y qué no)</h2>
+<p>Cuentan <strong>cuánta gente cruza</strong> una puerta o corredor, en ambos sentidos:
+un lado suma ENTRADA, el otro resta SALIDA, y se mantiene
+<code>DENTRO = inicial + entradas − salidas</code>.</p>
+<div class="note">Para saber <em>cuánta gente hay en un área ahora</em> (ocupación/aforo)
+no es este — es <code>../ContadorAforo/CrowdCounter_Web.py</code>.</div>
+<p>Pipeline común: YOLO detecta personas → ByteTrack les da identidad entre frames
+(tracker afinado en <code>bytetrack_contador.yaml</code>) → la posición de cada track
+(centroide) se evalúa contra la geometría dibujada. YOLO solo analiza un
+<strong>recorte generoso</strong> alrededor de la línea/box (<code>--full-frame</code> lo desactiva).</p>
+
+<h2 id="v1">2 · V1 — línea de cruce (<code>CONTADOR_PERSONAS</code>)</h2>
+<ul>
+  <li>En el editor web (botón <strong>Zonas</strong>) dibujas <strong>una línea de 2 puntos</strong>
+      atravesando la puerta.</li>
+  <li>Cuando el segmento <em>(centroide anterior → centroide actual)</em> de un track cruza
+      la línea, cuenta según el lado hacia el que cruzó. <code>--invert</code> voltea el
+      sentido sin redibujar.</li>
+</ul>
+<p><strong>Limitación</strong>: con oclusiones justo sobre la línea o pérdida del id en el
+instante del cruce, se pierden conteos → por eso existe la V2.</p>
+
+<h2 id="v2">3 · V2 — corredor con escalera (<code>CONTADOR_V2</code>, recomendado)</h2>
+<ul>
+  <li>Dibujas <strong>un box de 4 puntos</strong> atravesando la puerta; el primer lado
+      dibujado = AFUERA (<code>--invert</code> lo voltea).</li>
+  <li>Dentro se genera una <strong>escalera de N líneas</strong>; cada track lleva un
+      <strong>progreso p (0–100 %)</strong> en el eje AFUERA→ADENTRO. Brincarse líneas
+      entre frames cuenta igual (no depende del instante exacto del cruce).</li>
+</ul>
+<h3>Reglas de decisión R1–R5</h3>
+<table>
+  <tr><th>Regla</th><th>Situación</th><th>Resultado</th></tr>
+  <tr><td>R1</td><td>Cruzó la mayoría de las líneas (50 %+1) con dirección neta</td><td>Cuenta</td></tr>
+  <tr><td>R2</td><td>Salió del box por el lado contrario sin haber contado</td><td>Cuenta por lado de salida</td></tr>
+  <tr><td>R3</td><td>Track perdido dentro del box</td><td>Con mayoría → cuenta (inferido); sin mayoría → fantasma PENDIENTE</td></tr>
+  <tr><td>R4</td><td>Id nuevo aparece dentro del box</td><td>Hereda el progreso de un fantasma compatible (cruce partido en 2 ids por oclusión)</td></tr>
+  <tr><td>R5</td><td>Se asoma y regresa por donde vino</td><td>NO cuenta</td></tr>
+</table>
+<h3>Guardián de luz</h3>
+<table>
+  <tr><th>Brillo del corredor</th><th>Estado</th><th>Acción</th></tr>
+  <tr><td>Alto</td><td class="ok">NORMAL</td><td>—</td></tr>
+  <tr><td>Medio</td><td class="warn">BAJA LUZ</td><td>Confianza reducida + CLAHE</td></tr>
+  <tr><td>Bajo</td><td class="bad">OSCURO</td><td>Alerta "sin luz suficiente" + conteo EN PAUSA</td></tr>
+</table>
+<h3>Evidencia por evento</h3>
+<p>Cada entrada/salida guarda foto del frame + crop de la persona + rostro +
+registro <code>.jsonl</code> en <code>EVENTOS_CONTADOR/&lt;fuente&gt;/</code>.
+Además nube de rostro sobre el track (mediapipe, pesos en <code>weights_face/</code>).</p>
+
+<h2 id="persistencia">4 · Conteo persistente y "Fijar N dentro"</h2>
+<ul>
+  <li>El estado se guarda en <code>counters/&lt;fuente&gt;.json</code> y sobrevive reinicios.</li>
+  <li>El punto de partida se fija desde la tarjeta web
+      (<em>"Hay [N] persona(s) dentro ahora → Fijar y contar"</em>) o por API:
+      <code>POST /api/sources/&lt;id&gt;/counter {"inside": N}</code>.</li>
+  <li>Los conteos también salen en <code>GET /api/sources</code>
+      (campos <code>inside</code>, <code>in</code>, <code>out</code>, <code>offset</code>) —
+      ver <code>CONTRATO_ContadorFlujo.md</code>.</li>
+</ul>
+
+<h2 id="uso">5 · Uso</h2>
+<pre><code># V2 — corredor (recomendado):
+cd Models/areaRest/ContadorFlujo
+uv run --no-project --with flask,opencv-python,ultralytics,lap,mediapipe \
+    PeopleCounter_V2_Web.py --port 8092 --model yolo11x.pt
+
+# V1 — línea simple:
+uv run --no-project --with flask,opencv-python,ultralytics,lap,mediapipe \
+    PeopleCounter_Web.py --port 8093 --model yolo11x.pt
+
+# Luego en http://HOST:PUERTO/ : agregar fuente → botón "Zonas" →
+# dibujar la línea (V1) o el box (V2) → fijar N dentro → listo.</code></pre>
+
+<h2 id="flags">6 · Flags propias (ambos)</h2>
+<table>
+  <tr><th>Flag</th><th>Default</th><th>Descripción</th></tr>
+  <tr><td><code>--model</code></td><td><code>../yolo11x.pt</code></td><td>Pesos YOLO (nombre pelón = autodescarga)</td></tr>
+  <tr><td><code>--invert</code></td><td>off</td><td>Voltea el sentido ENTRADA/SALIDA sin redibujar</td></tr>
+  <tr><td><code>--full-frame</code></td><td>off</td><td>YOLO analiza el frame completo (sin recorte)</td></tr>
+  <tr><td><code>--zone-expand</code></td><td><code>0</code></td><td>Px extra del recorte de análisis</td></tr>
+</table>
+<p>Más las estándar del framework: <code>--source</code>, <code>--resize</code>,
+<code>--frame-skip</code>, <code>--save</code>, <code>--config</code>,
+<code>--alert-dir</code>, <code>--alert-cooldown</code>…</p>
+
+<h2 id="limites">7 · Limitaciones</h2>
+<ul>
+  <li>Requiere dibujar la línea/box por cámara (una vez, humano).</li>
+  <li>No identifica personas únicas: la misma persona entrando 2 veces = 2 entradas.</li>
+  <li>Si cambia la resolución de la fuente, hay que redibujar la geometría.</li>
+  <li>Flujos muy densos y pegados (multitud empujándose por la puerta) degradan
+      el tracking; el V2 mitiga con R3/R4 pero no es infalible.</li>
+</ul>
+
+<p class="sub" style="margin-top:3em">Última actualización: 2026-07-31 ·
+Contrato de integración: <code>CONTRATO_ContadorFlujo.md</code> ·
+Diseño del corredor: <code>DISENO_Contador.html</code> ·
+Doc general de las 3 familias: <code>../DOCUMENTACION.html</code></p>
+
+</div>
+</body>
+</html>

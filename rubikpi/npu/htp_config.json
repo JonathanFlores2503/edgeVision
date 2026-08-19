@@ -1,0 +1,5 @@
+{
+  "devices": [
+    { "dsp_arch": "v68", "pd_session": "signed" }
+  ]
+}

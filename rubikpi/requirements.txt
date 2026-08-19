@@ -1,0 +1,23 @@
+# Edge (Jetson) — dependencias de RUNTIME BASE.
+#
+# Esto basta para la demo en modo --mock (scorer simulado) y para todo el
+# pipeline de cloud (MQTT + HTTPS + SQLite). NO incluye torch.
+#
+# Para el modelo real TransLowNet (sin --mock) instala además:
+#     pip install -r requirements-model.txt
+#
+# Instalación:
+#     pip install -r requirements.txt
+#
+# Nota sobre OpenCV:
+#   - opencv-python-headless  -> servidores/Jetson sin pantalla y para la demo
+#                                WEB (tools.live_demo). Recomendado por defecto.
+#   - opencv-python           -> si necesitas ventanas nativas de cv2 (imshow).
+#     (La app de escritorio usa Tkinter, no requiere la variante con GUI.)
+
+numpy>=1.23
+opencv-python-headless>=4.8
+PyYAML>=6.0
+pydantic>=2.5
+paho-mqtt>=2.0
+requests>=2.31

@@ -1,0 +1,140 @@
+[project]
+name = "edge-node-jetson"
+version = "0.1.0"
+description = "Nodo edge VAD para NVIDIA Jetson — inferencia torch/CUDA 100% on-device"
+readme = "README.md"
+
+# ── Por qué Python 3.8 ────────────────────────────────────────────────────────
+# No es una preferencia: es lo que impone JetPack. El ÚNICO torch con CUDA
+# funcional en esta placa es el wheel de NVIDIA (L4T), compilado para cp38:
+#     torch 2.1.0a0+41361538.nv23.06   (JetPack R35 / Ubuntu 20.04, Orin)
+# Con cualquier Python más nuevo solo hay torch de PyPI, que en aarch64 viene
+# SIN CUDA (`torch.cuda.is_available() -> False`) y tira la inferencia a la CPU,
+# que es justo lo que la Jetson existe para evitar.
+requires-python = ">=3.8,<3.9"
+
+# ── Runtime base ──────────────────────────────────────────────────────────────
+# Con esto solo, el nodo arranca completo en modo --mock: cámaras RTSP/USB,
+# event engine, clips, SQLite, outbox, MQTT/HTTPS y dashboard web. Sin torch.
+dependencies = [
+    "numpy>=1.23",
+    "opencv-python-headless>=4.8",   # headless: la placa no tiene pantalla; evita libGL.so.1
+    "PyYAML>=6.0",
+    "pydantic>=2.5",
+    "paho-mqtt>=2.0",
+    "requests>=2.31",
+    "psutil>=5.9",                   # overlay de CPU/RAM del dashboard (edge/main.py:_stats_loop)
+]
+
+[project.optional-dependencies]
+# torch con CUDA de JetPack. NO viene de PyPI (ahí el aarch64 es sin CUDA): se
+# resuelve por URL directa al índice de NVIDIA, declarada en [tool.uv.sources].
+# Al estar en el lock, `uv sync` lo respeta en vez de borrarlo.
+#     uv sync --extra cuda
+cuda = ["torch", "torchvision"]
+
+# Modelo VAD integrado (X3D + detector + clasificador). Necesita el extra `cuda`:
+#     uv sync --extra cuda --extra model
+model = [
+    "pytorchvideo>=0.1.5",           # extractor X3D vía torch.hub
+    "fvcore>=0.1.5",                 # requerido por pytorchvideo
+]
+
+# Modelos enchufables de heuristicModels/. Necesita también el extra `cuda`:
+#     uv sync --extra cuda --extra heuristic
+heuristic = [
+    "ultralytics>=8.3",              # YOLO11 + ByteTrack (contador de flujo)
+    "lap>=0.5",                      # asignación húngara del tracker
+    "clip-anytorch>=2.6",            # mirror en PyPI del CLIP de OpenAI (Fight Detector)
+    "setuptools<70",                 # clip-anytorch usa pkg_resources.packaging, borrado en 70
+    "ftfy",                          # dependencia de CLIP
+    "regex",                         # dependencia de CLIP
+]
+
+# Reconocimiento facial (heuristicModels/faces.py). NO necesita el extra `cuda` para
+# resolverse, pero sí torch en el entorno: AdaFace corre en PyTorch.
+#     uv pip install onnxruntime insightface
+# Se instala con `uv pip install` y NO con `uv sync --extra faces` a propósito: este
+# árbol tiene ultralytics/CLIP/torchvision metidos a mano fuera del lock (ver la nota
+# al final del archivo), y un `uv sync` los borraría. La resolución de estas dos es
+# limpia y —comprobado— NO toca numpy, que el torch de JetPack exige en <1.25.
+#
+# onnxruntime de PyPI trae SOLO CPU: SCRFD tarda ~200 ms/frame a det_size=320 (5 FPS).
+# El wheel con CUDA es `onnxruntime-gpu` de NVIDIA para JetPack, que NO está en PyPI ni
+# en el índice redist de NVIDIA: sale del Jetson Zoo (https://elinux.org/Jetson_Zoo).
+# Ya está descargado en vendor/ (ver la nota de vendor/ al final) y se instala así:
+#     uv pip install insightface
+#     uv pip install vendor/onnxruntime_gpu-1.16.0-cp38-cp38-linux_aarch64.whl
+# Medido en esta placa el 2026-08-19: det_size=320 → 13.8 ms/frame (72 FPS), 640 → 31.5 ms
+# (32 FPS), con detecciones idénticas bit a bit a las de CPU. facecore prefiere CUDA solo.
+faces = [
+    "insightface>=1.0",              # SCRFD det_10g: detección + landmarks
+    "onnxruntime-gpu>=1.16",         # runtime de SCRFD (wheel de vendor/, ver nota arriba)
+]
+
+# ── De dónde sale torch ───────────────────────────────────────────────────────
+# El wheel exacto que trae CUDA en esta placa (JetPack R35, Orin, cp38). Se declara
+# aquí y NO con `uv pip install` suelto: `uv sync` desinstala todo lo que no esté en
+# el lock, así que un torch metido a mano desaparecería en el siguiente sync.
+#
+# Si cambias de JetPack, cambia esta URL: el índice es
+#   https://developer.download.nvidia.com/compute/redist/jp/<versión>/pytorch/
+# Comprueba después de instalar:
+#   uv run python -c "import torch;print(torch.__version__, torch.cuda.is_available())"
+# Tiene que imprimir True. Si imprime False, se coló el torch de PyPI.
+#
+# Nota: este wheel exige numpy<1.25; el lock ya fija numpy 1.24.4, así que encaja.
+[tool.uv.sources]
+torch = { url = "https://developer.download.nvidia.com/compute/redist/jp/v512/pytorch/torch-2.1.0a0+41361538.nv23.06-cp38-cp38-linux_aarch64.whl" }
+
+# torchvision NO lo publica NVIDIA (su índice solo trae torch) y el de PyPI no es
+# compatible con este torch. El wheel de vendor/ es el build 0.16.0 que ya existía
+# en la placa, reempaquetado: mismo cp38, compilado contra este mismo torch. Se le
+# relajó el `Requires-Dist: torch (==2.1.0)` porque ese pin excluye la pre-release
+# de NVIDIA (2.1.0a0), contra la que precisamente está compilado.
+# Alternativa si cambias de JetPack: recompilarlo desde fuente contra el torch nuevo.
+torchvision = { path = "vendor/torchvision-0.16.0-cp38-cp38-linux_aarch64.whl" }
+
+# onnxruntime-gpu tampoco existe en PyPI para cp38/aarch64: sin esta línea la resolución
+# del extra `faces` es insatisfacible y hasta `uv run` falla. El wheel vive en vendor/
+# para no depender de volver a encontrarlo en internet.
+# Es el build de JetPack 5.1.1 / cp38 del Jetson Zoo (CUDA 11.4 + cuDNN 8.6 + TRT 8.5),
+# válido en esta placa (R35.6.5). OJO: los builds más nuevos del Zoo (onnxruntime-gpu
+# 1.17.0 y 1.18.0 de JetPack 5.1.2) están compilados con GCC 11 y piden GLIBCXX_3.4.29;
+# Ubuntu 20.04 llega solo a 3.4.28, así que fallan al importar. Si hace falta subir de
+# versión, comprobar antes:
+#   strings <ruta>/capi/onnxruntime_pybind11_state.so | grep -o 'GLIBCXX_3\.4\.[0-9]*' | sort -V | tail -1
+onnxruntime-gpu = { path = "vendor/onnxruntime_gpu-1.16.0-cp38-cp38-linux_aarch64.whl" }
+
+[tool.uv]
+# Este árbol corre en UNA plataforma: la Jetson. Sin esto, uv intenta una
+# resolución universal (Windows, macOS, x86…) y falla, porque las cadenas
+# ultralytics→torchvision no tienen solución en win32 con Python 3.8.
+environments = ["sys_platform == 'linux' and platform_machine == 'aarch64'"]
+
+# El nodo NO se instala como paquete: se ejecuta desde esta carpeta con
+#     uv run python -m edge.main --config config.yaml
+# Es deliberado. El registro de modelos descubre los plugins por RUTA
+# (edge/inference/registry.py: HEUR_DIR = parents[2]/"heuristicModels"); si el
+# paquete se instalara en site-packages, esa ruta apuntaría fuera del repo y el
+# dashboard dejaría de ver heuristicModels/.
+package = false
+
+# ── ultralytics / CLIP: por qué NO están en el lock ───────────────────────────
+# `ultralytics` (YOLO11) y `clip-anytorch` dependen de `torchvision`, y NO existe
+# ningún torchvision en PyPI compatible con el torch de JetPack (2.1.0a0+…nv23.06,
+# cp38 aarch64): los de PyPI se anclan a versiones concretas de torch de PyPI. uv
+# no puede resolverlo — lo comprobé, la resolución es insatisfacible.
+#
+# En esta placa hay un torchvision 0.16.0 compilado para JetPack (dentro del env
+# conda `arconte_jetson`), pero no está publicado en el índice de NVIDIA, así que
+# no hay URL que declarar aquí.
+#
+# Para usar los modelos heurísticos hay que instalarlos SIN que arrastren torch:
+#     uv sync --extra cuda --extra heuristic
+#     uv pip install --no-deps ultralytics clip-anytorch
+#     # + un torchvision construido contra el torch de JetPack (reutiliza el de
+#     #   arconte_jetson o recompílalo para cp38)
+#
+# Ojo: lo instalado con `uv pip install` NO está en el lock, así que un
+# `uv sync` posterior lo borra y hay que repetir estas dos líneas.
