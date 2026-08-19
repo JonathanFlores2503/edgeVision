@@ -3,12 +3,16 @@
 La plataforma es **modelo-agnóstica**: todo el pipeline (captura, eventos, clips, storage,
 dashboard, alertas) solo depende de un contrato de salida, **`ClipResult`**. Para añadir un
 detector nuevo (caras, objetos, EPP, violencia, lo que sea) **no se toca la plataforma**: se
-suelta un archivo `.py` en [`edge/heuristicModels/`](../edge/heuristicModels/) y aparece solo en
+suelta un archivo `.py` en [`<placa>/heuristicModels/`](../jetson/heuristicModels/) y aparece solo en
 el panel de admin del dashboard, listo para seleccionar.
+
+> **Un árbol por placa.** Cada dispositivo tiene su propia copia del nodo (`jetson/` y
+> `rubikpi/`), así que cada uno tiene su propio `heuristicModels/`. Si quieres el mismo
+> plugin en las dos placas, cópialo a las dos carpetas.
 
 ## El contrato de salida — `ClipResult`
 
-Todo modelo produce, por cada decisión, un `ClipResult` (ver [`edge/edge/types.py`](../edge/edge/types.py)):
+Todo modelo produce, por cada decisión, un `ClipResult` (ver [`<placa>/edge/types.py`](../jetson/edge/types.py)):
 
 ```python
 ClipResult(
@@ -36,7 +40,7 @@ Para detección de caras/objetos casi siempre quieres **`stream_processor`**.
 
 ## Anatomía de un plugin
 
-Un archivo en `edge/heuristicModels/mi_modelo.py` con **dos cosas**:
+Un archivo en `<placa>/heuristicModels/mi_modelo.py` con **dos cosas**:
 
 ### 1) `META` — descriptor (literal puro)
 
@@ -65,7 +69,7 @@ DENTRO de `build`/la clase**, nunca arriba del módulo (para que el listado sea 
 ## Ejemplo mínimo — `stream_processor` (estilo detección de caras)
 
 ```python
-"""edge/heuristicModels/face_detector.py — detección de caras por cámara."""
+"""heuristicModels/face_detector.py — detección de caras por cámara."""
 from __future__ import annotations
 import time
 from datetime import datetime
@@ -122,7 +126,7 @@ def build(cfg):
 
 > `feed()` debe ser **barato** (corre en el hilo de captura). Si tu modelo es pesado, encola el
 > frame y procésalo en tus propios hilos; llama `on_result(...)` cuando tengas la decisión.
-> Referencia completa multi-cámara con presupuesto de RAM: [`edge/heuristicModels/FightDetector_Production.py`](../edge/heuristicModels/FightDetector_Production.py).
+> Referencia completa multi-cámara con presupuesto de RAM: [`<placa>/heuristicModels/FightDetector_Production.py`](../jetson/heuristicModels/FightDetector_Production.py).
 
 ## Ejemplo mínimo — `clip_scorer`
 
@@ -142,8 +146,9 @@ def build(cfg):
 
 ## Probarlo
 
-1. Suelta tu archivo en `edge/heuristicModels/`.
-2. Arranca el nodo: `cd edge && python -m edge.main --config config.yaml --mock`
+1. Suelta tu archivo en `heuristicModels/` del árbol de tu placa (`jetson/` o `rubikpi/`).
+2. Arranca el nodo desde la carpeta de tu placa:
+   `uv run python -m edge.main --config config.yaml --mock`
    (el `--mock` evita necesitar los pesos del modelo integrado).
 3. Abre el dashboard → **Config → Modelos enchufables**: tu modelo aparece.
    - Si sus `requires` no están instalados, sale **deshabilitado** con el motivo.

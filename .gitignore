@@ -1,14 +1,15 @@
 # Datos y artefactos de runtime
+# (cada árbol de dispositivo —jetson/, rubikpi/— tiene su propio data/)
 data/
 **/data/
-edge/_verify/
+**/_verify/
 *.db
 *.db-journal
 *.mp4
 
 # Config con secretos (usar config.example.yaml como plantilla)
+# `config.yaml` sin barra ya cubre cualquier nivel: jetson/, rubikpi/, edge/
 config.yaml
-edge/config.yaml
 
 # Python
 __pycache__/
@@ -22,9 +23,9 @@ venv/
 **/ota/
 
 # Contador de flujo: data por-despliegue (corredor, contadores, evidencia)
-edge/Models/ContadorFlujo/zones_web/*.json
-edge/Models/ContadorFlujo/counters/
-edge/Models/ContadorFlujo/EVENTOS_CONTADOR/
+**/Models/ContadorFlujo/zones_web/*.json
+**/Models/ContadorFlujo/counters/
+**/Models/ContadorFlujo/EVENTOS_CONTADOR/
 
 # OS / IDE
 .DS_Store

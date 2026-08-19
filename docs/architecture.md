@@ -8,7 +8,7 @@
 **✅ Edge — operativo en dos placas:**
 - **NVIDIA Jetson** (backend `torch`, opción TensorRT) y **Thundercomm RUBIK Pi 3**
   (backend `onnx` / onnxruntime en CPU; Hexagon pendiente del QNN SDK). Ver
-  [`edge/README.rubikpi.md`](../edge/README.rubikpi.md).
+  [`rubikpi/README.md`](../rubikpi/README.md).
 - Captura **RTSP + USB plug-and-play**, ring buffer, inferencia on-device, Event
   Engine (umbral + histéresis + confirmación temporal), recorte de clip `.mp4`,
   SQLite + outbox *offline-first*, MQTT/HTTPS, OTA.
@@ -16,7 +16,7 @@
   sesión (admin/usuario, PBKDF2), **gestión de usuarios**, gestión de cámaras +
   umbral/rotación por cámara, **GPS NEO-6M con mapa de México offline**, **panel de
   selección de modelo** y alertas (SMS/correo/WhatsApp/Telegram). Ver
-  [`edge/README.md`](../edge/README.md).
+  [`jetson/README.md`](../jetson/README.md).
 
 **⏳ Pendiente:** cloud (backend FastAPI, ingest MQTT→Postgres, object storage de
 clips, frontend React), MLflow/OTA de modelos, y empaquetado del modelo en
@@ -87,21 +87,29 @@ anomalía**, con **backend (FastAPI)**, **frontend (React)** y **MLOps**.
 
 ## 4. Componentes
 
-### 4.1 Edge (`edge/`) — Python (+ DeepStream/GStreamer opcional)
+### 4.1 Edge (`jetson/`, `rubikpi/`) — Python (+ DeepStream/GStreamer opcional)
+
+> Cada placa tiene **su propio árbol de código completo** (ver [`../README.md`](../README.md)):
+> `jetson/` (torch/CUDA) y `rubikpi/` (onnxruntime/Hexagon). Lo descrito abajo es común a
+> ambos, pero vive duplicado: un cambio hay que aplicarlo en las dos carpetas.
 - **Capture**: 1 hilo/proceso por cámara (RTSP). Reusa el muestreo de `inferenceFinal_Offline.py`
-  (`indexClipSampling`, `centralCrop`, normalización) extraído a `edge/inference/preprocess.py`.
+  (`indexClipSampling`, `centralCrop`, normalización) extraído a `<placa>/edge/inference/preprocess.py`.
 - **Inference Worker (íntegro en el edge)**: carga X3D + `Detector_VAD` + `violenceOneCrop`.
   ~2 GFLOPs → cabe sin problema. **Backend seleccionable**: `torch` (Jetson, opción
   TensorRT) u **`onnx`** (RUBIK Pi 3, onnxruntime CPU/Hexagon). Un worker multiplexa las cámaras.
-- **Captura RTSP + USB**: cámaras RTSP configurables desde la web y **autodetección USB**
-  *plug-and-play* (sin reiniciar). Rotación y reescalado en captura; cadencia por cámara
-  (`capture.clip_cooldown_s`) para no saturar la cola de inferencia en CPU.
+- **Captura RTSP + USB + vídeo subido**: cámaras RTSP configurables desde la web,
+  **autodetección USB** *plug-and-play* (sin reiniciar) y **archivos de vídeo subidos
+  desde el dashboard** (`file://nombre.mp4`, biblioteca en `storage.videos_dir`), que se
+  reproducen en bucle y a su velocidad real para comportarse como una cámara —así se
+  puede desplegar y demostrar la plataforma **sin hardware de cámara**. Rotación y
+  reescalado en captura; cadencia por cámara (`capture.clip_cooldown_s`) para no saturar
+  la cola de inferencia en CPU.
 - **Event Engine**: umbral configurable (global y por cámara) + histéresis + confirmación
   temporal (persistencia / ráfaga) → abre/cierra evento.
 - **Clip Encoder**: recorta el buffer a clip `.mp4` con pre/post-roll al disparar evento.
 - **Local Store + Outbox**: SQLite + disco + cola de subida con reintentos (offline-first).
 - **Edge Agent**: cliente MQTT + uploader HTTPS + cliente OTA (poll de versión de pesos).
-- **Monitor / Dashboard web** (`edge/monitor/`): servidor stdlib (`:8090`, PWA) con auth
+- **Monitor / Dashboard web** (`<placa>/edge/monitor/`): servidor stdlib (`:8090`, PWA) con auth
   por sesión y roles, gestión de **usuarios**, cámaras, umbrales/rotación, **panel de
   modelo**, alertas, y **GPS NEO-6M + mapa de México offline** (GeoJSON embebido).
 - **Config**: `config.yaml` por dispositivo (id, cámaras, umbrales, endpoints, modelo,
@@ -138,7 +146,8 @@ anomalía**, con **backend (FastAPI)**, **frontend (React)** y **MLOps**.
 D:\Codes\phdFinal\
 ├── README.md
 ├── docs/                  # este documento, ADRs, diagramas, capítulo de tesis
-├── edge/                  # capture/ inference/ events/ storage/ agent/ · config.example.yaml · Dockerfile.jetson
+├── jetson/                # nodo Jetson (torch/CUDA): capture/ inference/ events/ storage/ agent/ · Dockerfile.jetson
+├── rubikpi/               # nodo RUBIK Pi 3 (onnxruntime/Hexagon): mismo nodo, backend ONNX · npu/
 ├── cloud/
 │   ├── backend/           # FastAPI: app/{api,core,models,schemas,services,workers}
 │   └── frontend/          # React + Vite + TS
