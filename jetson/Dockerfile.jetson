@@ -1,0 +1,37 @@
+# Imagen edge para Jetson (JetPack / L4T). torch+torchvision vienen en la base.
+# Ajusta el tag a tu versión de JetPack.
+FROM nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.0-py3
+
+ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /app
+
+# Dependencias de sistema para OpenCV / GStreamer (decodificación RTSP por HW).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-opencv \
+        gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav \
+    && rm -rf /var/lib/apt/lists/*
+
+# Gestor de dependencias: uv (mismo que fuera del contenedor).
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Dependencias base desde pyproject.toml/uv.lock.
+#
+# `--system` es deliberado: instala en el intérprete de la imagen, NO en un .venv.
+# La base de NVIDIA ya trae el torch con CUDA de JetPack; un venv nuevo lo dejaría
+# fuera y la inferencia caería a CPU.
+COPY pyproject.toml uv.lock ./
+RUN uv pip install --system --no-cache -r pyproject.toml
+
+# Extra `model` (X3D del VAD integrado): NO se instala aquí a propósito.
+# `pytorchvideo` depende de `torch` y pip resolvería el de PyPI, pisando el de
+# NVIDIA y perdiendo CUDA. Si lo necesitas, instálalo protegiendo torch:
+#     uv pip install --system --no-cache --no-deps pytorchvideo fvcore
+#     uv pip install --system --no-cache iopath yacs tqdm portalocker  # deps de los anteriores
+# y verifica después:  python3 -c "import torch;print(torch.cuda.is_available())"
+
+COPY . /app
+
+# Config y datos se montan como volúmenes en runtime:
+#   docker run --runtime nvidia --network host \
+#     -v $PWD/config.yaml:/app/config.yaml -v $PWD/data:/app/data edge-vad
+CMD ["python3", "-m", "edge.main", "--config", "config.yaml"]
